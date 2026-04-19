@@ -191,21 +191,60 @@ tr:hover td{background:var(--accent-light)}
 
 <script>
 
-(function(){var _p='https://raw.githubusercontent.com/';window.__src=_p+'wssaidong/AAna/main';})();
+(function(){
+var _p='https://raw.githubusercontent.com/';
+window.__src=_p+'wssaidong/AAna/main';
+})();
+
 var RAW = window.__src;
 
+// === Constants ===
 var DAY_NAME_MAP={0:'周日',1:'周一',2:'周二',3:'周三',4:'周四',5:'周五',6:'周六'};
+var CATEGORIES=["AI算力/芯片","人形机器人","半导体设备","储能/绿电","AI应用"];
+var CAT_COLORS={"AI算力/芯片":"#ef4444","人形机器人":"#f59e0b","半导体设备":"#3b82f6","储能/绿电":"#10b981","AI应用":"#8b5cf6"};
+var DIM_COLORS={"大盘判断":"#ef4444","热点命中":"#f59e0b","个股表现":"#3b82f6","操作建议":"#8b5cf6","风险提示":"#10b981","黑马挖掘":"#f97316"};
+var DIM_NORM={"大盘判断准确率":"大盘判断","大盘方向判断":"大盘判断","热点主线命中率":"热点命中","热点方向命中率":"热点命中","推荐个股表现":"个股表现","Top10个股命中率":"个股表现","推荐个股平均涨幅":"个股表现","操作建议有效性":"操作建议","风险提示有效性":"风险提示","风险提示准确性":"风险提示","风险控制":"风险提示","风控提示":"风险提示","黑马挖掘能力":"黑马挖掘"};
+var RETRY_DELAY_BASE=600;
+var LOAD_INTERVAL=180;
+var MAX_Y=10;
+
+// === Date Generation ===
 var DATES=[];
 for(var di=6;di>=0;di--){
   var d=new Date();
   d.setDate(d.getDate()-di);
   DATES.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
 }
-var DAY_NAMES=DATES.map(function(d){var m=d.match(/(\d{4})-(\d{2})-(\d{2})/);var dt=new Date(m[1],m[2]-1,m[3]);return DAY_NAME_MAP[dt.getDay()];});
+var DATE_DAY_MAP={};
+var DAY_NAMES=DATES.map(function(dt){
+  var m=dt.match(/(\d{4})-(\d{2})-(\d{2})/);
+  var dayName=DAY_NAME_MAP[new Date(m[1],m[2]-1,m[3]).getDay()];
+  DATE_DAY_MAP[dt]=dayName;
+  return dayName;
+});
+
+// === State ===
 var WEEKLY_DATA={};
 var SELECTED_DAY=DATES[DATES.length-1];
 var ALL_LOADED=0;
 var TOTAL_NEEDED=14;
+
+// === Utilities ===
+function reSafe(s){return s.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");}
+function parseTableRow(row){return row.split("|").slice(1,-1).map(function(c){return c.trim();});}
+function stripBold(val){return val?val.replace(/\*\*/g,""):val;}
+function extractEmoji(str){
+  if(!str)return{emoji:"📊",name:str||""};
+  var m=str.match(/^[💻📊🔧🤖🧠🔋]+/);
+  return{emoji:m?m[0]:"📊",name:str.replace(/^[💻📊🔧🤖🧠🔋]+\s*/,"").trim()};
+}
+function parseChangeStr(str){
+  if(!str)return{raw:str,dir:"neutral",val:0};
+  var m=str.match(/([🟢🔴⚪])\s*([+-]?[\d.]+)%/);
+  if(!m)return{raw:str,dir:"neutral",val:0};
+  return{raw:str,dir:parseFloat(m[2])>=0?"up":"down",val:parseFloat(m[2])};
+}
+function stockCellClass(ch){return ch.dir==="up"?"up":ch.dir==="down"?"down":"";}
 
 function switchTab(tab){
   document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("active");});
@@ -234,26 +273,25 @@ function parseReport(md,date){
   var top10m=md.match(/### 🏆 重点关注 Top 10\n\n\|[\s\S]*?\n([\s\S]*?)(?=### |## |$)/);
   if(top10m){
     top10m[1].split("\n").filter(function(l){return l.startsWith("|")&&/^\| \d/.test(l);}).forEach(function(row){
-      var cells=row.split("|").slice(1,-1).map(function(c){return c.trim();});
+      var cells=parseTableRow(row);
       if(cells.length>=9){
         var ex=extractEmoji(cells[1]);
-        d.top10.push({rank:cells[0],emoji:ex.emoji,name:ex.name,code:cells[2],price:cells[3],change:cells[4],tech:cells[5],score:cells[6].replace(/\*\*/g,""),rating:cells[7],risk:cells[8]});
+        d.top10.push({rank:cells[0],emoji:ex.emoji,name:ex.name,code:cells[2],price:cells[3],change:cells[4],tech:cells[5],score:stripBold(cells[6]),rating:cells[7],risk:cells[8]});
       }
     });
   }
-  var catNames=["AI算力/芯片","人形机器人","半导体设备","储能/绿电","AI应用"];
-  catNames.forEach(function(catName){
+  CATEGORIES.forEach(function(catName){
     var escaped=reSafe(catName);
-    var reSource="### "+escaped+"\\n[\\s\\S]*?\\n\\n\\|[^\\n]+\\|[\\s\\S]*?\\n(([\\s\\S]*?)(?=### |## |$))";
+    var reSource="### "+escaped+"\n[\s\S]*?\n\n\|[^\n]+\|[\s\S]*?\n(([\s\S]*?)(?=### |## |$))";
     var catM;
     try{catM=md.match(new RegExp(reSource));}catch(e){catM=null;}
     if(catM&&catM[1]){
       var stocks=[];
       catM[1].split("\n").filter(function(l){return l.startsWith("|")&&/^\| [^|]/.test(l);}).forEach(function(row){
-        var cells=row.split("|").slice(1,-1).map(function(c){return c.trim();});
+        var cells=parseTableRow(row);
         if(cells.length>=7){
           var ex=extractEmoji(cells[0]);
-          stocks.push({emoji:ex.emoji,name:ex.name,code:cells[1],price:cells[2],change:cells[3],tech:cells[4],score:cells[5].replace(/\*\*/g,""),rating:cells[6]});
+          stocks.push({emoji:ex.emoji,name:ex.name,code:cells[1],price:cells[2],change:cells[3],tech:cells[4],score:stripBold(cells[5]),rating:cells[6]});
         }
       });
       if(stocks.length)d.categories[catName]=stocks;
@@ -264,16 +302,20 @@ function parseReport(md,date){
 
 function parseReview(md,date){
   var d={date:date,overallScore:null,dimScores:{},problems:[],suggestions:[]};
-  var om=md.match(/\*\*综合评分\*\*\s*\|\s*\*\*([\d.]+)(?:\/10)?\*\*/);
-  if(om){var sv=parseFloat(om[1]);d.overallScore=sv>10?Math.round(sv*10/100):sv;}
-  if(!d.overallScore){var om2=md.match(/\*\*综合评分[:：]\s*([\d.]+)\/10\*\*/);if(om2)d.overallScore=parseFloat(om2[1]);}
-  if(!d.overallScore){var om3=md.match(/综合评分\*\*\s*\|\s*\*\*([\d.]+)\s*\|\s*10/);if(om3)d.overallScore=parseFloat(om3[1]);}
+  var scorePatterns=[
+    {re:/\*\*综合评分\*\*\s*\|\s*\*\*([\d.]+)(?:\/10)?\*\*/,parse:function(v){var n=parseFloat(v);return n>10?Math.round(n*10/100):n;}},
+    {re:/\*\*综合评分[:：]\s*([\d.]+)\/10\*\*/,parse:parseFloat},
+    {re:/综合评分\*\*\s*\|\s*\*\*([\d.]+)\s*\|\s*10/,parse:parseFloat}
+  ];
+  for(var i=0;i<scorePatterns.length;i++){
+    var m=md.match(scorePatterns[i].re);
+    if(m){d.overallScore=scorePatterns[i].parse(m[1]);break;}
+  }
   var dimKeys=["大盘判断准确率","大盘判断","大盘方向判断","热点方向命中率","热点主线命中率","推荐个股表现","Top10个股命中率","操作建议有效性","风险提示有效性","风险提示准确性","风险控制","风控提示","黑马挖掘能力","推荐个股平均涨幅"];
-  var dimNorm={"大盘判断准确率":"大盘判断","大盘方向判断":"大盘判断","热点主线命中率":"热点命中","热点方向命中率":"热点命中","推荐个股表现":"个股表现","Top10个股命中率":"个股表现","推荐个股平均涨幅":"个股表现","操作建议有效性":"操作建议","风险提示有效性":"风险提示","风险提示准确性":"风险提示","风险控制":"风险提示","风控提示":"风险提示","黑马挖掘能力":"黑马挖掘"};
   dimKeys.forEach(function(k){
     var re=new RegExp("\\|\\s*"+reSafe(k)+"\\s*\\|\\s*(\\d+)[/\\s]");
     var m=md.match(re);
-    if(m){var nk=dimNorm[k]||k;if(!d.dimScores[nk])d.dimScores[nk]=parseInt(m[1]);}
+    if(m){var nk=DIM_NORM[k]||k;if(!d.dimScores[nk])d.dimScores[nk]=parseInt(m[1]);}
   });
   var probM=md.match(/##\s*(?:四、|五、)?核心问题分析([\s\S]*?)(?=##\s*(?:五、|六、)|$)/);
   if(probM){
@@ -312,8 +354,9 @@ function renderOverview(){
     var rd=WEEKLY_DATA[dt];
     if(!rd||!rd.report)return;
     rd.report.top10.forEach(function(s){
-      if(!stockMap[s.code]){stockMap[s.code]={code:s.code,name:s.name,emoji:s.emoji,days:[],ratings:[],changes:{},risk:s.risk};}
+      if(!stockMap[s.code]){stockMap[s.code]={code:s.code,name:s.name,emoji:s.emoji,days:[],daysSet:new Set(),ratings:[],changes:{},risk:s.risk};}
       stockMap[s.code].days.push(dt);
+      stockMap[s.code].daysSet.add(dt);
       stockMap[s.code].ratings.push(s.rating);
       if(s.change)stockMap[s.code].changes[dt]=s.change;
     });
@@ -336,7 +379,7 @@ function renderOverview(){
   var hHTML="";
   top15.forEach(function(stock){
     var cellsHTML=DATES.map(function(dt){
-      var has=stock.days.indexOf(dt)>=0;
+      var has=stock.daysSet.has(dt);
       var ch=parseChangeStr(stock.changes[dt]);
       var cls="none";
       if(has){if(ch.dir==="up")cls=ch.val>=3?"up-hot":ch.val>=1?"up-mid":"up-light";else if(ch.dir==="down")cls=ch.val<=-1?"down-hot":ch.val<=-0.5?"down-mid":"down-light";else cls="up-light";}
@@ -366,11 +409,10 @@ function renderOverview(){
       catCount[cat].days++;catCount[cat].totalStocks+=rd.report.categories[cat].length;
     });
   });
-  var catColors={"AI算力/芯片":"#ef4444","人形机器人":"#f59e0b","半导体设备":"#3b82f6","储能/绿电":"#10b981","AI应用":"#8b5cf6"};
   document.getElementById("cat-bars").innerHTML=Object.entries(catCount).sort(function(a,b){return b[1].days-a[1].days;}).map(function(item){
     var cat=item[0],data=item[1];
     var pct=Math.round((data.days/7)*100);
-    var col=catColors[cat]||"var(--accent)";
+    var col=CAT_COLORS[cat]||"var(--accent)";
     return'<div class="score-row"><div class="lbl" style="width:100px">'+cat+'</div><div class="bar-wrap"><div class="bar" style="width:'+pct+'%;background:'+col+'"></div></div><div class="val" style="color:'+col+'">'+data.days+'/7 · '+data.totalStocks+'只</div></div>';
   }).join("");
 
@@ -379,7 +421,7 @@ function renderOverview(){
     if(!rd||!rd.report)return"";
     var top3=rd.report.top10.slice(0,3).map(function(s){return s.emoji+" "+s.name;}).join(" · ");
     var score=rd.review?rd.review.overallScore:"—";
-    return'<div class="review-block"><div class="rb-header"><div class="rb-title">'+dt+' ('+DAY_NAMES[DATES.indexOf(dt)]+')</div><div class="rb-score">'+score+'/10'+(rd.review&&rd.review.overallScore?'':' <span style="font-size:0.7rem;color:var(--muted)">暂无评分</span>')+'</div></div><div class="rb-meta"><strong>Top：</strong>'+top3+'</div></div>';
+    return'<div class="review-block"><div class="rb-header"><div class="rb-title">'+dt+' ('+DATE_DAY_MAP[dt]+')</div><div class="rb-score">'+score+'/10'+(rd.review&&rd.review.overallScore?'':' <span style="font-size:0.7rem;color:var(--muted)">暂无评分</span>')+'</div></div><div class="rb-meta"><strong>Top：</strong>'+top3+'</div></div>';
   }).join("");
 }
 
@@ -407,8 +449,7 @@ function renderDayReport(dt){
   html+='<div class="section-title">🏆 Top 10</div><div class="stock-table-wrap"><table class="stock-table"><thead><tr><th>#</th><th>股票</th><th>代码</th><th>价格</th><th>涨跌幅</th><th>技</th><th>综</th><th>评级</th><th>风险</th></tr></thead><tbody>';
   r.top10.forEach(function(s){
     var ch=parseChangeStr(s.change);
-    var cls=ch.dir==="up"?"up":ch.dir==="down"?"down":"";
-    html+='<tr><td>'+s.rank+'</td><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+s.price+'</td><td class="'+cls+'">'+(ch.raw||"")+'</td><td>'+s.tech+'</td><td><span class="score-badge">'+s.score+'</span></td><td><span class="rating-stars">'+s.rating+'</span></td><td>'+s.risk+'</td></tr>';
+    html+='<tr><td>'+s.rank+'</td><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+s.price+'</td><td class="'+stockCellClass(ch)+'">'+(ch.raw||"")+'</td><td>'+s.tech+'</td><td><span class="score-badge">'+s.score+'</span></td><td><span class="rating-stars">'+s.rating+'</span></td><td>'+s.risk+'</td></tr>';
   });
   html+='</tbody></table></div>';
   cats.forEach(function(cat){
@@ -416,8 +457,7 @@ function renderDayReport(dt){
     html+='<div class="section-title" style="margin-top:1.5rem">'+cat+'</div><div class="stock-table-wrap"><table class="stock-table"><thead><tr><th>股票</th><th>代码</th><th>价格</th><th>涨跌幅</th><th>技</th><th>综</th><th>评级</th></tr></thead><tbody>';
     cs.forEach(function(s){
       var ch=parseChangeStr(s.change);
-      var cls=ch.dir==="up"?"up":ch.dir==="down"?"down":"";
-      html+='<tr><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+s.price+'</td><td class="'+cls+'">'+(ch.raw||"")+'</td><td>'+s.tech+'</td><td><span class="score-badge">'+s.score+'</span></td><td><span class="rating-stars">'+s.rating+'</span></td></tr>';
+      html+='<tr><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+s.price+'</td><td class="'+stockCellClass(ch)+'">'+(ch.raw||"")+'</td><td>'+s.tech+'</td><td><span class="score-badge">'+s.score+'</span></td><td><span class="rating-stars">'+s.rating+'</span></td></tr>';
     });
     html+='</tbody></table></div>';
   });
@@ -425,10 +465,9 @@ function renderDayReport(dt){
     var rv=rd.review;
     html+='<div class="section-title" style="margin-top:1.5rem">🔍 复盘 '+dt+'</div><div class="review-block"><div class="rb-header"><div class="rb-title">综合评分</div><div class="rb-score">'+(rv.overallScore||"—")+'/10</div></div>';
     if(rv.dimScores&&Object.keys(rv.dimScores).length){
-      var dimColors2={"大盘判断":"#ef4444","热点命中":"#f59e0b","个股表现":"#3b82f6","操作建议":"#8b5cf6","风险提示":"#10b981","黑马挖掘":"#f97316"};
       html+='<div style="margin-top:0.8rem">';
       Object.entries(rv.dimScores).forEach(function(kv){
-        var color=dimColors2[kv[0]]||"var(--accent)";
+        var color=DIM_COLORS[kv[0]]||"var(--accent)";
         html+='<div class="score-row"><div class="lbl">'+kv[0]+'</div><div class="bar-wrap"><div class="bar" style="width:'+Math.round((kv[1]/10)*100)+'%;background:'+color+'"></div></div><div class="val" style="color:'+color+'">'+kv[1]+'/10</div></div>';
       });
       html+='</div>';
@@ -517,13 +556,12 @@ function renderReview(){
     document.getElementById('day-score-cards').innerHTML+='<div class="day-score-card" style="border-color:var(--accent)"><div class="date">平均</div><div class="score">'+avgOverall.toFixed(1)+'</div><div class="max">/10</div></div>';
   }
 
-  var dimColors={"大盘判断":"#ef4444","热点命中":"#f59e0b","个股表现":"#3b82f6","操作建议":"#8b5cf6","风险提示":"#10b981","黑马挖掘":"#f97316"};
-  renderTrendChart('overall-trend',[{name:'综合评分',color:'var(--accent)',data:dayScores.map(function(d){return{label:d.date.slice(5),value:d.score};})}],10);
+  renderTrendChart('overall-trend',[{name:'综合评分',color:'var(--accent)',data:dayScores.map(function(d){return{label:d.date.slice(5),value:d.score};})}],MAX_Y);
   var dimSeries=[];
   Object.entries(dimAll).filter(function(kv){return kv[1].length>0;}).forEach(function(kv){
-    dimSeries.push({name:kv[0],color:dimColors[kv[0]]||'var(--accent)',data:kv[1].map(function(v){return{label:v.date.slice(5),value:v.val};})});
+    dimSeries.push({name:kv[0],color:DIM_COLORS[kv[0]]||'var(--accent)',data:kv[1].map(function(v){return{label:v.date.slice(5),value:v.val};})});
   });
-  if(dimSeries.length)renderTrendChart('dim-trend',dimSeries,10);
+  if(dimSeries.length)renderTrendChart('dim-trend',dimSeries,MAX_Y);
 
   var probList=Object.entries(allProblems).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
   document.getElementById('common-problems').innerHTML=probList.map(function(item){
@@ -538,46 +576,44 @@ function renderReview(){
   document.getElementById('review-content').classList.remove('hidden');
 }
 
-// Load all data - sequential with retry and rate-limit backoff
+// Load all data - parallel fetch with retry and rate-limit backoff
 (function loadAll(){
   var dbg=document.getElementById('dbg');
-  var idx=0;
-  function loadNext(){
-    if(idx>=DATES.length){
-      if(dbg)dbg.textContent+=' | 加载完成';
-      return;
-    }
-    var dt=DATES[idx++];
+  var loaded=0;
+  function checkDone(){loaded++;if(loaded>=TOTAL_NEEDED&&dbg)dbg.textContent+=' | 加载完成';}
+
+  function fetchWithRetry(url,type,retries){
+    return fetch(url).then(function(r){
+      if(!r.ok&&r.status===429&&retries>0){
+        if(dbg)dbg.textContent+=' | '+type+' 限流重试';
+        return new Promise(function(res){setTimeout(function(){res(fetchWithRetry(url,type,retries-1));},RETRY_DELAY_BASE*(4-retries));});
+      }
+      if(dbg)dbg.textContent+=' | '+type+':'+r.status;
+      return r.ok?r.text():null;
+    }).catch(function(e){
+      if(retries>0){
+        if(dbg)dbg.textContent+=' | '+type+' err重试';
+        return new Promise(function(res){setTimeout(function(){res(fetchWithRetry(url,type,retries-1));},400);});
+      }
+      if(dbg)dbg.textContent+=' | '+type+' err:'+e.message;
+      return null;
+    });
+  }
+
+  DATES.forEach(function(dt){
     WEEKLY_DATA[dt]={};
-    if(dbg)dbg.textContent='加载: '+dt+' ('+idx+'/'+DATES.length+')';
-    function fetchWithRetry(url,type,retries){
-      return fetch(url).then(function(r){
-        if(!r.ok&&r.status===429&&retries>0){
-          if(dbg)dbg.textContent+=' | '+type+' 限流重试';
-          return new Promise(function(res){setTimeout(function(){res(fetchWithRetry(url,type,retries-1));},600*(4-retries));});
-        }
-        if(dbg)dbg.textContent+=' | '+type+':'+r.status;
-        return r.ok?r.text():null;
-      }).catch(function(e){
-        if(retries>0){
-          if(dbg)dbg.textContent+=' | '+type+' err重试';
-          return new Promise(function(res){setTimeout(function(){res(fetchWithRetry(url,type,retries-1));},400);});
-        }
-        if(dbg)dbg.textContent+=' | '+type+' err:'+e.message;
-        return null;
-      });
-    }
+    if(dbg)dbg.textContent='加载: '+dt;
     fetchWithRetry(RAW+"/"+dt+"-%E9%80%89%E8%82%A1%E6%8A%A5%E5%91%8A.md",'选股',3).then(function(md){
       if(md){WEEKLY_DATA[dt].report=parseReport(md,dt);}
       onDataLoaded();
-      fetchWithRetry(RAW+"/"+dt+"-%E5%A4%8D%E7%9B%98%E8%AF%84%E5%88%86.md",'复盘',3).then(function(md2){
-        if(md2){WEEKLY_DATA[dt].review=parseReview(md2,dt);}
-        onDataLoaded();
-        setTimeout(loadNext,180);
-      });
+      checkDone();
     });
-  }
-  loadNext();
+    fetchWithRetry(RAW+"/"+dt+"-%E5%A4%8D%E7%9B%98%E8%AF%84%E5%88%86.md",'复盘',3).then(function(md2){
+      if(md2){WEEKLY_DATA[dt].review=parseReview(md2,dt);}
+      onDataLoaded();
+      checkDone();
+    });
+  });
 })();
 
 </script>
