@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>AAna 周度综合看板</title>
+<style>
+:root{--bg:#0a0e1a;--card:#111827;--card2:#1a2235;--border:#1e2d45;--accent:#3b82f6;--green:#10b981;--red:#ef4444;--yellow:#f59e0b;--text:#e2e8f0;--muted:#64748b;--radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'SF Mono',monospace;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+.container{max-width:1200px;margin:0 auto;padding:2rem 1.5rem}
+.header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;margin-bottom:2rem}
+.logo{display:flex;align-items:center;gap:1rem}
+.logo-icon{width:44px;height:44px;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.3rem}
+.brand h1{font-size:1.3rem;font-weight:700;color:#fff}
+.brand p{font-size:0.75rem;color:var(--muted)}
+.badge-live{display:flex;align-items:center;gap:0.4rem;background:var(--card2);border:1px solid var(--border);border-radius:100px;padding:0.3rem 1rem;font-size:0.75rem;color:var(--green)}
+.badge-live::before{content:'';width:6px;height:6px;background:var(--green);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.tabs{display:flex;gap:0.5rem;border-bottom:1px solid var(--border);padding-bottom:0;margin-bottom:2rem;flex-wrap:wrap}
+.tab{padding:0.6rem 1.4rem;border-radius:8px 8px 0 0;border:1px solid var(--border);border-bottom:none;background:transparent;color:var(--muted);font-size:0.85rem;cursor:pointer;transition:all 0.2s;font-family:inherit;letter-spacing:1px}
+.tab:hover{color:var(--accent);border-color:var(--accent)}
+.tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tab-content{display:none}.tab-content.active{display:block}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;text-align:center}
+.stat-card .val{font-size:2.2rem;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.stat-card .lbl{font-size:0.75rem;color:var(--muted);margin-top:0.3rem;letter-spacing:1px;text-transform:uppercase}
+.stat-card .sub{font-size:0.7rem;color:var(--green);margin-top:0.3rem}
+.day-tabs{display:flex;gap:0.4rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.day-tab{padding:0.4rem 1rem;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:0.78rem;cursor:pointer;transition:all 0.15s;font-family:inherit;white-space:nowrap}
+.day-tab:hover{border-color:var(--accent);color:var(--accent)}
+.day-tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+.day-tab .day-name{display:block;font-size:0.65rem;opacity:0.7}
+.day-content{display:none}.day-content.active{display:block}
+.section-title{font-size:1rem;color:#fff;margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
+.section-title::before{content:'';width:3px;height:16px;background:var(--accent);border-radius:2px}
+.stock-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:1.5rem}
+.stock-table{width:100%;border-collapse:collapse;font-size:0.8rem}
+.stock-table th{background:var(--card2);color:var(--muted);font-weight:500;text-align:left;padding:0.65rem 1rem;border-bottom:1px solid var(--border);white-space:nowrap;font-size:0.75rem;letter-spacing:1px;text-transform:uppercase}
+.stock-table td{padding:0.65rem 1rem;border-bottom:1px solid rgba(30,45,69,0.5);vertical-align:middle}
+.stock-table tr:last-child td{border-bottom:none}
+.stock-table tr:hover td{background:rgba(59,130,246,0.05)}
+.stock-name{font-weight:600;color:#fff}
+.stock-code{color:var(--muted);font-size:0.72rem}
+.up{color:var(--red)}.down{color:var(--green)}
+.score-badge{display:inline-block;background:rgba(59,130,246,0.15);color:var(--accent);border-radius:4px;padding:0.1rem 0.4rem;font-weight:700;font-size:0.75rem}
+.rating-stars{color:var(--yellow);font-size:0.7rem;letter-spacing:1px}
+.day-report-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:0.5rem}
+.day-report-header .date{font-size:1rem;font-weight:700;color:#fff}
+.day-report-header .meta{font-size:0.75rem;color:var(--muted)}
+.heatmap-col-labels{display:flex;gap:4px;margin-left:96px;margin-bottom:6px}
+.heatmap-col-label{width:36px;text-align:center;font-size:0.65rem;color:var(--muted);line-height:1.3}
+.heatmap-row{display:flex;gap:4px;align-items:center;margin-bottom:4px}
+.heatmap-label{min-width:88px;font-size:0.72rem;color:var(--text);text-align:right;padding-right:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.heatmap-cells{display:flex;gap:4px;flex:1}
+.heatmap-cell{width:36px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.62rem;font-weight:600;color:#fff}
+.heatmap-cell.red-hot{background:rgba(239,68,68,0.9)}.heatmap-cell.red-mid{background:rgba(200,60,60,0.6)}.heatmap-cell.red-light{background:rgba(180,60,60,0.35)}
+.heatmap-cell.green-hot{background:rgba(16,185,129,0.9)}.heatmap-cell.green-mid{background:rgba(16,160,100,0.55)}.heatmap-cell.green-light{background:rgba(16,140,90,0.3)}
+.heatmap-cell.none{background:var(--card2);color:var(--muted);border:1px solid var(--border)}
+.freq-dot{width:9px;height:9px;border-radius:2px;display:inline-block}
+.day-score-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:0.8rem;margin-bottom:1.5rem}
+.day-score-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:0.9rem;text-align:center}
+.day-score-card:hover{border-color:var(--accent)}
+.day-score-card .date{font-size:0.7rem;color:var(--muted);margin-bottom:0.3rem}
+.day-score-card .score{font-size:1.6rem;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.day-score-card .max{font-size:0.65rem;color:var(--muted)}
+.score-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;margin-bottom:1rem}
+.score-row{display:flex;align-items:center;gap:0.8rem;margin-bottom:0.65rem;flex-wrap:wrap}
+.score-row .lbl{width:130px;font-size:0.78rem;color:var(--muted)}
+.score-row .bar-wrap{flex:1;min-width:100px;background:var(--card2);border-radius:100px;height:7px;overflow:hidden}
+.score-row .bar{height:100%;border-radius:100px}
+.score-row .val{width:40px;text-align:right;font-size:0.78rem;font-weight:600}
+.review-block{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;margin-bottom:0.8rem}
+.review-block .rb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.6rem}
+.review-block .rb-title{font-size:0.9rem;font-weight:700;color:#fff}
+.review-block .rb-score{font-size:1.1rem;font-weight:800;color:var(--accent)}
+.review-block .rb-meta{font-size:0.75rem;color:var(--muted)}
+.problem-card{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--red);border-radius:var(--radius);padding:0.9rem 1.1rem;margin-bottom:0.7rem}
+.problem-card h4{color:#fff;font-size:0.85rem;margin-bottom:0.3rem}
+.problem-card p{font-size:0.75rem;color:var(--muted)}
+.suggestion-card{background:var(--card);border:1px solid var(--border);border-left:3px solid var(--yellow);border-radius:var(--radius);padding:0.9rem 1.1rem;margin-bottom:0.7rem}
+.suggestion-card h4{color:#fff;font-size:0.85rem;margin-bottom:0.3rem}
+.suggestion-card p{font-size:0.75rem;color:var(--muted)}
+.loading{text-align:center;padding:3rem;color:var(--muted)}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 1rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
+.footer{margin-top:3rem;padding-top:1.5rem;border-top:1px solid var(--border);text-align:center;font-size:0.75rem;color:var(--muted)}
+@media(max-width:600px){.heatmap-col-labels,.heatmap-row{overflow-x:auto}.stock-table{font-size:0.72rem}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">
+      <div class="logo-icon">📊</div>
+      <div class="brand"><h1>AAna 周度综合看板</h1><p>最近7天选股报告 · 跨日对比分析 · 仅供参考不构成投资建议</p></div>
+    </div>
+    <div class="badge-live"><span>🔴</span> 每日 9:35 / 17:00 更新</div>
+  </div>
+  <div class="tabs">
+    <button class="tab active" id="tab-btn-overview" onclick="switchTab('overview')">📈 综合看板</button>
+    <button class="tab" id="tab-btn-daily" onclick="switchTab('daily')">📋 每日报告</button>
+    <button class="tab" id="tab-btn-review" onclick="switchTab('review')">🔍 周度复盘</button>
+  </div>
+  <div id="tab-overview" class="tab-content active">
+    <div class="loading" id="overview-loading"><div class="spinner"></div><div>加载周度数据中...</div></div>
+    <div id="overview-content" class="hidden">
+      <div class="stats-row" id="stats-row"></div>
+      <div class="section-title">📊 个股跨日热度图（Top 15）</div>
+      <div id="heatmap-col-labels" class="heatmap-col-labels"></div>
+      <div id="heatmap-grid"></div>
+      <div class="section-title">🏆 持续关注榜（出现 ≥2 天）</div>
+      <div class="stock-table-wrap">
+        <table class="stock-table"><thead><tr><th>#</th><th>股票</th><th>代码</th><th>出现日期</th><th>最近评级</th><th>风险</th></tr></thead><tbody id="freq-tbody"></tbody></table>
+      </div>
+      <div class="section-title">📂 板块覆盖（近7天）</div>
+      <div id="cat-bars" class="stock-table-wrap" style="padding:1rem 1.2rem"></div>
+      <div class="section-title">📅 每日综评</div>
+      <div id="day-summaries"></div>
+    </div>
+  </div>
+  <div id="tab-daily" class="tab-content">
+    <div class="day-tabs" id="day-tabs"></div>
+    <div class="loading" id="daily-loading"><div class="spinner"></div><div>加载每日数据中...</div></div>
+    <div id="daily-content" class="hidden"></div>
+  </div>
+  <div id="tab-review" class="tab-content">
+    <div class="loading" id="review-loading"><div class="spinner"></div><div>加载复盘数据中...</div></div>
+    <div id="review-content" class="hidden">
+      <div class="section-title">📊 各日综合评分</div>
+      <div class="day-score-cards" id="day-score-cards"></div>
+      <div class="section-title">📈 各维度评分趋势（满分10分）</div>
+      <div id="dim-scores" class="score-card"></div>
+      <div class="section-title" style="color:var(--red)">⚠️ 反复出现的问题</div>
+      <div id="common-problems"></div>
+      <div class="section-title" style="color:var(--yellow)">💡 高频优化建议</div>
+      <div id="common-suggestions"></div>
+    </div>
+  </div>
+  <div class="footer">AAna v2.3 · 数据来源：新浪财经 · 仅供参考，不构成投资建议</div>
+</div>
+<script>
+var RAW="https://raw.githubusercontent.com/wssaidong/AAna/main";
+var DATES=["2026-04-10","2026-04-11","2026-04-12","2026-04-13","2026-04-14","2026-04-15","2026-04-16"];
+var DAY_NAMES=["周四","周五","周六","周日","周一","周二","周三"];
+var WEEKLY_DATA={};
+var SELECTED_DAY="2026-04-16";
+var ALL_LOADED=0;
+var TOTAL_NEEDED=14;
+
+function switchTab(tab){
+  document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("active");});
+  document.querySelectorAll(".tab-content").forEach(function(c){c.classList.remove("active");});
+  document.getElementById("tab-btn-"+tab).classList.add("active");
+  document.getElementById("tab-"+tab).classList.add("active");
+}
+
+function extractEmoji(str){
+  if(!str)return{emoji:"📊",name:str||""};
+  var m=str.match(/^[💻📊🔧🤖🧠🔋]+/);
+  return{emoji:m?m[0]:"📊",name:str.replace(/^[💻📊🔧🤖🧠🔋]+\s*/,"").trim()};
+}
+
+function parseChangeStr(str){
+  if(!str)return{raw:str,dir:"neutral",val:0};
+  var m=str.match(/([🟢🔴⚪])\s*([+-]?[\d.]+)%/);
+  if(!m)return{raw:str,dir:"neutral",val:0};
+  return{raw:str,dir:parseFloat(m[2])>=0?"up":"down",val:parseFloat(m[2])};
+}
+
+function reSafe(s){return s.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");}
+
+function parseReport(md,date){
+  var d={date:date,top10:[],categories:{}};
+  var top10m=md.match(/### 🏆 重点关注 Top 10\n\n\|[\s\S]*?\n([\s\S]*?)(?=### |## |$)/);
+  if(top10m){
+    top10m[1].split("\n").filter(function(l){return l.startsWith("|")&&/^\| \d/.test(l);}).forEach(function(row){
+      var cells=row.split("|").slice(1,-1).map(function(c){return c.trim();});
+      if(cells.length>=9){
+        var ex=extractEmoji(cells[1]);
+        d.top10.push({rank:cells[0],emoji:ex.emoji,name:ex.name,code:cells[2],price:cells[3],change:cells[4],tech:cells[5],score:cells[6].replace(/\*\*/g,""),rating:cells[7],risk:cells[8]});
+      }
+    });
+  }
+  var catNames=["AI算力/芯片","人形机器人","半导体设备","储能/绿电","AI应用"];
+  catNames.forEach(function(catName){
+    var escaped=reSafe(catName);
+    var reSource="### "+escaped+"\\n[\\s\\S]*?\\n\\n\\|[^\\n]+\\|[\\s\\S]*?\\n(([\\s\\S]*?)(?=### |## |$))";
+    var catM;
+    try{catM=md.match(new RegExp(reSource));}catch(e){catM=null;}
+    if(catM&&catM[1]){
+      var stocks=[];
+      catM[1].split("\n").filter(function(l){return l.startsWith("|")&&/^\| [^|]/.test(l);}).forEach(function(row){
+        var cells=row.split("|").slice(1,-1).map(function(c){return c.trim();});
+        if(cells.length>=7){
+          var ex=extractEmoji(cells[0]);
+          stocks.push({emoji:ex.emoji,name:ex.name,code:cells[1],price:cells[2],change:cells[3],tech:cells[4],score:cells[5].replace(/\*\*/g,""),rating:cells[6]});
+        }
+      });
+      if(stocks.length)d.categories[catName]=stocks;
+    }
+  });
+  return d;
+}
+
+function parseReview(md,date){
+  var d={date:date,overallScore:null,dimScores:{},problems:[],suggestions:[]};
+  var om=md.match(/\*\*综合评分\*\*.*?\*\* ([\d.]+)\/10\*\*/);
+  if(om)d.overallScore=parseFloat(om[1]);
+  var dims=[["大盘判断",/\| 大盘判断.*?\| (\d+) \|/],["热点方向命中率",/\| 热点方向命中率.*?\| (\d+) \|/],["推荐个股表现",/\| 推荐个股表现.*?\| (\d+) \|/],["操作建议有效性",/\| 操作建议有效性.*?\| (\d+) \|/],["风险提示准确性",/\| 风险提示准确性.*?\| (\d+) \|/]];
+  dims.forEach(function(item){var m=md.match(item[1]);if(m)d.dimScores[item[0]]=parseInt(m[1]);});
+  var probM=md.match(/## 四、核心问题分析([\s\S]*?)(?=## 五、|## 六、|$)/);
+  if(probM){
+    probM[1].split(/### 问题\d+/).filter(function(b){return b.trim();}).forEach(function(block){
+      var tm=block.match(/\*\*现象：\*\*(.*?)(\n|$)/);
+      if(tm)d.problems.push(tm[1].trim().slice(0,120));
+    });
+  }
+  var suggM=md.match(/## 五、优化建议([\s\S]*?)(?=## 六、|$)/);
+  if(suggM){
+    suggM[1].split(/### 建议\d+/).filter(function(b){return b.trim();}).forEach(function(block){
+      var tm=block.match(/\*\*问题：\*\*(.*?)(\n|$)/);
+      if(tm)d.suggestions.push(tm[1].trim().slice(0,120));
+    });
+  }
+  return d;
+}
+
+function onDataLoaded(){
+  ALL_LOADED++;
+  if(ALL_LOADED<TOTAL_NEEDED)return;
+  renderOverview();
+  renderDayTabs();
+  renderDayReport(SELECTED_DAY);
+  renderReview();
+  document.getElementById("overview-loading").classList.add("hidden");
+  document.getElementById("overview-content").classList.remove("hidden");
+  document.getElementById("daily-loading").classList.add("hidden");
+  document.getElementById("review-loading").classList.add("hidden");
+}
+
+function renderOverview(){
+  var stockMap={};
+  DATES.forEach(function(dt){
+    var rd=WEEKLY_DATA[dt];
+    if(!rd||!rd.report)return;
+    rd.report.top10.forEach(function(s){
+      if(!stockMap[s.code]){stockMap[s.code]={code:s.code,name:s.name,emoji:s.emoji,days:[],ratings:[],changes:{},risk:s.risk};}
+      stockMap[s.code].days.push(dt);
+      stockMap[s.code].ratings.push(s.rating);
+      if(s.change)stockMap[s.code].changes[dt]=s.change;
+    });
+  });
+  var stocks=Object.values(stockMap).sort(function(a,b){return b.days.length-a.days.length;});
+  var freqStocks=stocks.filter(function(s){return s.days.length>=2;});
+  var top15=stocks.slice(0,15);
+  var totalReports=Object.values(WEEKLY_DATA).filter(function(d){return d.report;}).length;
+  var totalReviews=Object.values(WEEKLY_DATA).filter(function(d){return d.review;}).length;
+  var avgScore=freqStocks.length?Math.round(freqStocks.reduce(function(s,v){return s+parseFloat(v.ratings[v.ratings.length-1]||0);},0)/freqStocks.length):0;
+  document.getElementById("stats-row").innerHTML=[
+    {val:totalReports,lbl:"选股报告",sub:"最近7天"},
+    {val:totalReviews,lbl:"复盘评分",sub:"最近7天"},
+    {val:freqStocks.length,lbl:"持续关注股",sub:"出现≥2天"},
+    {val:avgScore||"—",lbl:"平均综合分",sub:freqStocks[0]?freqStocks[0].name:""},
+  ].map(function(s){return'<div class="stat-card"><div class="val">'+s.val+'</div><div class="lbl">'+s.lbl+'</div>'+(s.sub?'<div class="sub">'+s.sub+'</div>':'')+'</div>';}).join('');
+
+  document.getElementById("heatmap-col-labels").innerHTML=DATES.map(function(dt,i){return'<div class="heatmap-col-label">'+DAY_NAMES[i]+'<br><span style="font-size:0.6rem">'+dt.slice(5)+'</span></div>';}).join('');
+
+  var hHTML="";
+  top15.forEach(function(stock){
+    var cellsHTML=DATES.map(function(dt){
+      var has=stock.days.indexOf(dt)>=0;
+      var ch=parseChangeStr(stock.changes[dt]);
+      var cls="none";
+      if(has){if(ch.dir==="up")cls=ch.val>=3?"red-hot":ch.val>=1?"red-mid":"red-light";else if(ch.dir==="down")cls=ch.val<=-1?"green-hot":"green-mid";else cls="red-light";}
+      var label=has?(stock.changes[dt]?stock.changes[dt].replace(/[🟢🔴⚪]/g,"").replace("%",""):"●"):"";
+      return'<div class="heatmap-cell '+cls+'" title="'+(stock.name||"")+' '+(stock.changes[dt]||"")+'">'+label+'</div>';
+    }).join("");
+    hHTML+='<div class="heatmap-row"><div class="heatmap-label" title="'+stock.name+'">'+stock.emoji+' '+stock.name+'</div><div class="heatmap-cells">'+cellsHTML+'</div></div>';
+  });
+  document.getElementById("heatmap-grid").innerHTML=hHTML;
+
+  document.getElementById("freq-tbody").innerHTML=freqStocks.map(function(s,i){
+    var lastR=s.ratings[s.ratings.length-1]||"—";
+    var dotsHTML=s.days.map(function(dt){
+      var ch=parseChangeStr(s.changes[dt]);
+      var col=ch.dir==="up"?"var(--red)":ch.dir==="down"?"var(--green)":"var(--muted)";
+      return'<span class="freq-dot" style="background:'+col+'" title="'+dt+' '+(ch.raw||"")+'"></span>';
+    }).join("");
+    return'<tr><td>'+(i+1)+'</td><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+dotsHTML+'</td><td><span class="rating-stars">'+lastR+'</span></td><td>'+(s.risk||"—")+'</td></tr>';
+  }).join("");
+
+  var catCount={};
+  DATES.forEach(function(dt){
+    var rd=WEEKLY_DATA[dt];
+    if(!rd||!rd.report)return;
+    Object.keys(rd.report.categories).forEach(function(cat){
+      if(!catCount[cat])catCount[cat]={days:0,totalStocks:0};
+      catCount[cat].days++;catCount[cat].totalStocks+=rd.report.categories[cat].length;
+    });
+  });
+  var catColors={"AI算力/芯片":"#ef4444","人形机器人":"#f59e0b","半导体设备":"#3b82f6","储能/绿电":"#10b981","AI应用":"#8b5cf6"};
+  document.getElementById("cat-bars").innerHTML=Object.entries(catCount).sort(function(a,b){return b[1].days-a[1].days;}).map(function(item){
+    var cat=item[0],data=item[1];
+    var pct=Math.round((data.days/7)*100);
+    var col=catColors[cat]||"var(--accent)";
+    return'<div class="score-row"><div class="lbl" style="width:100px">'+cat+'</div><div class="bar-wrap"><div class="bar" style="width:'+pct+'%;background:'+col+'"></div></div><div class="val" style="color:'+col+'">'+data.days+'/7 · '+data.totalStocks+'只</div></div>';
+  }).join("");
+
+  document.getElementById("day-summaries").innerHTML=DATES.slice().reverse().map(function(dt){
+    var rd=WEEKLY_DATA[dt];
+    if(!rd||!rd.report)return"";
+    var top3=rd.report.top10.slice(0,3).map(function(s){return s.emoji+" "+s.name;}).join(" · ");
+    var score=rd.review?rd.review.overallScore:"—";
+    return'<div class="review-block"><div class="rb-header"><div class="rb-title">'+dt+' ('+DAY_NAMES[DATES.indexOf(dt)]+')</div><div class="rb-score">'+score+'/10'+(rd.review&&rd.review.overallScore?'':' <span style="font-size:0.7rem;color:var(--muted)">暂无评分</span>')+'</div></div><div class="rb-meta"><strong>Top：</strong>'+top3+'</div></div>';
+  }).join("");
+}
+
+function renderDayTabs(){
+  document.getElementById("day-tabs").innerHTML=DATES.slice().reverse().map(function(dt){
+    return'<button class="day-tab'+(dt===SELECTED_DAY?' active':'')+'" onclick="selectDay(\''+dt+'\')"><span class="day-name">'+dt.slice(5)+'</span>'+DAY_NAMES[DATES.indexOf(dt)]+'</button>';
+  }).join("");
+}
+
+function selectDay(dt){
+  SELECTED_DAY=dt;
+  document.querySelectorAll(".day-tab").forEach(function(t){t.classList.remove("active");});
+  document.querySelector(".day-tab[onclick*='"+dt+"']").classList.add("active");
+  renderDayReport(dt);
+}
+
+function renderDayReport(dt){
+  var rd=WEEKLY_DATA[dt];
+  if(!rd||!rd.report){document.getElementById("daily-content").innerHTML="<div class='loading'>该日期暂无数据</div>";return;}
+  var r=rd.report;
+  var cats=Object.keys(r.categories||{});
+  var html='<div class="day-report-header"><div><div class="date">'+dt+' 选股报告</div><div class="meta">AAna v2.3 · 仅供参考不构成投资建议</div></div>';
+  if(rd.review&&rd.review.overallScore)html+='<span class="score-badge" style="font-size:0.85rem;padding:0.3rem 0.8rem">复盘 '+rd.review.overallScore+'/10</span>';
+  html+='</div>';
+  html+='<div class="section-title">🏆 Top 10</div><div class="stock-table-wrap"><table class="stock-table"><thead><tr><th>#</th><th>股票</th><th>代码</th><th>价格</th><th>涨跌幅</th><th>技</th><th>综</th><th>评级</th><th>风险</th></tr></thead><tbody>';
+  r.top10.forEach(function(s){
+    var ch=parseChangeStr(s.change);
+    var cls=ch.dir==="up"?"up":ch.dir==="down"?"down":"";
+    html+='<tr><td>'+s.rank+'</td><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+s.price+'</td><td class="'+cls+'">'+(ch.raw||"")+'</td><td>'+s.tech+'</td><td><span class="score-badge">'+s.score+'</span></td><td><span class="rating-stars">'+s.rating+'</span></td><td>'+s.risk+'</td></tr>';
+  });
+  html+='</tbody></table></div>';
+  cats.forEach(function(cat){
+    var cs=r.categories[cat];if(!cs||!cs.length)return;
+    html+='<div class="section-title" style="margin-top:1.5rem">'+cat+'</div><div class="stock-table-wrap"><table class="stock-table"><thead><tr><th>股票</th><th>代码</th><th>价格</th><th>涨跌幅</th><th>技</th><th>综</th><th>评级</th></tr></thead><tbody>';
+    cs.forEach(function(s){
+      var ch=parseChangeStr(s.change);
+      var cls=ch.dir==="up"?"up":ch.dir==="down"?"down":"";
+      html+='<tr><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+s.price+'</td><td class="'+cls+'">'+(ch.raw||"")+'</td><td>'+s.tech+'</td><td><span class="score-badge">'+s.score+'</span></td><td><span class="rating-stars">'+s.rating+'</span></td></tr>';
+    });
+    html+='</tbody></table></div>';
+  });
+  if(rd.review){
+    var rv=rd.review;
+    html+='<div class="section-title" style="margin-top:1.5rem">🔍 复盘 '+dt+'</div><div class="review-block"><div class="rb-header"><div class="rb-title">综合评分</div><div class="rb-score">'+(rv.overallScore||"—")+'/10</div></div>';
+    if(rv.dimScores&&Object.keys(rv.dimScores).length){
+      var dimColors={"大盘判断":"#ef4444","热点方向命中率":"#f59e0b","推荐个股表现":"#3b82f6","操作建议有效性":"#8b5cf6","风险提示准确性":"#10b981"};
+      html+='<div style="margin-top:0.8rem">';
+      Object.entries(rv.dimScores).forEach(function(kv){
+        var color=dimColors[kv[0]]||"var(--accent)";
+        html+='<div class="score-row"><div class="lbl">'+kv[0]+'</div><div class="bar-wrap"><div class="bar" style="width:'+Math.round((kv[1]/10)*100)+'%;background:'+color+'"></div></div><div class="val" style="color:'+color+'">'+kv[1]+'/10</div></div>';
+      });
+      html+='</div>';
+    }
+    html+='</div>';
+  }
+  document.getElementById("daily-content").innerHTML=html;
+  document.getElementById("daily-content").classList.remove("hidden");
+}
+
+function renderReview(){
+  var allProblems={};
+  var allSuggestions={};
+  var dimAll={大盘判断:[],热点方向命中率:[],推荐个股表现:[],操作建议有效性:[],风险提示准确性:[]};
+  var dayScores=[];
+  DATES.forEach(function(dt){
+    var rd=WEEKLY_DATA[dt];
+    if(!rd||!rd.review)return;
+    var rv=rd.review;
+    if(rv.overallScore)dayScores.push({date:dt,score:rv.overallScore});
+    if(rv.problems)rv.problems.forEach(function(p){if(!allProblems[p])allProblems[p]=0;allProblems[p]++;});
+    if(rv.suggestions)rv.suggestions.forEach(function(s){if(!allSuggestions[s])allSuggestions[s]=0;allSuggestions[s]++;});
+    Object.keys(dimAll).forEach(function(k){
+      if(rv.dimScores&&rv.dimScores[k]!=null)dimAll[k].push({date:dt,val:rv.dimScores[k]});
+    });
+  });
+
+  document.getElementById("day-score-cards").innerHTML=dayScores.map(function(d){
+    return'<div class="day-score-card"><div class="date">'+
+    d.date.slice(5)+'</div><div class="score">'+d.score+'</div><div class="max">/10</div></div>';
+  }).join('');
+  if(dayScores.length){
+    var avgOverall=dayScores.reduce(function(s,v){return s+v.score;},0)/dayScores.length;
+    document.getElementById('day-score-cards').innerHTML+='<div class="day-score-card" style="border-color:var(--accent)"><div class="date">平均</div><div class="score">'+avgOverall.toFixed(1)+'</div><div class="max">/10</div></div>';
+  }
+
+  var dimColors={"大盘判断":"#ef4444","热点方向命中率":"#f59e0b","推荐个股表现":"#3b82f6","操作建议有效性":"#8b5cf6","风险提示准确性":"#10b981"};
+  var dimHTML='';
+  Object.entries(dimAll).filter(function(kv){return kv[1].length>0;}).forEach(function(kv){
+    var k=kv[0],vals=kv[1];
+    var avg=vals.reduce(function(s,v){return s+v.val;},0)/vals.length;
+    var color=dimColors[k]||"var(--accent)";
+    dimHTML+='<div class="score-row"><div class="lbl">'+k+'</div><div class="bar-wrap"><div class="bar" style="width:'+Math.round((avg/10)*100)+'%;background:'+color+'"></div></div><div class="val" style="color:'+color+'">'+avg.toFixed(1)+'/10</div></div>';
+  });
+  document.getElementById('dim-scores').innerHTML=dimHTML;
+
+  var probList=Object.entries(allProblems).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  document.getElementById('common-problems').innerHTML=probList.map(function(item){
+    return'<div class="problem-card"><h4>⚠️ '+item[0]+'</h4><p>出现 '+item[1]+' 次</p></div>';
+  }).join('');
+
+  var suggList=Object.entries(allSuggestions).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
+  document.getElementById('common-suggestions').innerHTML=suggList.map(function(item){
+    return'<div class="suggestion-card"><h4>💡 '+item[0]+'</h4><p>出现 '+item[1]+' 次</p></div>';
+  }).join('');
+
+  document.getElementById('review-content').classList.remove('hidden');
+}
+
+// Load all data
+DATES.forEach(function(dt){
+  WEEKLY_DATA[dt]={};
+  fetch(RAW+"/"+dt+"-选股报告.md").then(function(r){return r.ok?r.text():null;}).then(function(md){
+    if(md){WEEKLY_DATA[dt].report=parseReport(md,dt);}
+    onDataLoaded();
+  }).catch(function(){onDataLoaded();});
+
+  fetch(RAW+"/"+dt+"-复盘评分.md").then(function(r){return r.ok?r.text():null;}).then(function(md){
+    if(md){WEEKLY_DATA[dt].review=parseReview(md,dt);}
+    onDataLoaded();
+  }).catch(function(){onDataLoaded();});
+});
+</script>
+</body>
+</html>
