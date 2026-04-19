@@ -116,6 +116,18 @@ tr:hover td{background:var(--accent-light)}
 .idx-change{font-size:0.7rem;font-weight:600;font-family:monospace}
 .stock-row{display:flex;justify-content:space-between;align-items:center;padding:0.42rem 0;border-bottom:1px solid var(--border);font-size:0.855rem}
 .stock-row:last-child{border-bottom:none}
+.trend-chart{position:relative;padding:1.2rem 1rem 0.8rem}
+.trend-svg{width:100%;height:auto;display:block}
+.trend-grid-line{stroke:var(--border);stroke-width:0.5}
+.trend-axis-label{fill:var(--text3);font-size:10px;font-family:inherit}
+.trend-line{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.trend-dot{cursor:pointer;transition:r 0.15s}
+.trend-dot:hover{r:6}
+.trend-area{opacity:0.08}
+.trend-legend{display:flex;gap:1.2rem;flex-wrap:wrap;padding:0.6rem 0.2rem 0;font-size:0.75rem;color:var(--text2)}
+.trend-legend-item{display:flex;align-items:center;gap:0.35rem;font-weight:600}
+.trend-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.trend-tooltip{position:absolute;background:var(--text);color:#fff;padding:0.35rem 0.65rem;border-radius:8px;font-size:0.72rem;font-weight:600;pointer-events:none;opacity:0;transition:opacity 0.15s;white-space:nowrap;z-index:10;transform:translate(-50%,-120%)}
 .loading{text-align:center;padding:4.5rem;color:var(--text2)}
 .spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.85s linear infinite;margin:0 auto 1.1rem}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -161,8 +173,10 @@ tr:hover td{background:var(--accent-light)}
     <div id="review-content" class="hidden">
       <div class="section-title"><span class="icon">📊</span> 各日综合评分</div>
       <div class="score-cards" id="day-score-cards"></div>
-      <div class="section-title"><span class="icon">📈</span> 各维度评分趋势</div>
-      <div class="card" id="dim-scores"></div>
+      <div class="section-title"><span class="icon">📈</span> 综合评分趋势</div>
+      <div class="card"><div class="trend-chart" id="overall-trend"></div></div>
+      <div class="section-title"><span class="icon">📊</span> 各维度评分趋势</div>
+      <div class="card"><div class="trend-chart" id="dim-trend"></div></div>
       <div id="idx-tracker"></div>
       <div id="stock-summary"></div>
       <div class="section-title" style="color:var(--red)"><span class="icon">⚠️</span> 反复出现的问题</div>
@@ -178,7 +192,7 @@ tr:hover td{background:var(--accent-light)}
 <script>
 
 (function(){var _p='https://raw.githubusercontent.com/';window.__src=_p+'wssaidong/AAna/main';})();
-var RAW = location.hostname.includes('x-compass') ? window.__src : 'data';
+var RAW = window.__src;
 
 var DAY_NAME_MAP={0:'周日',1:'周一',2:'周二',3:'周三',4:'周四',5:'周五',6:'周六'};
 var DATES=[];
@@ -250,26 +264,29 @@ function parseReport(md,date){
 
 function parseReview(md,date){
   var d={date:date,overallScore:null,dimScores:{},problems:[],suggestions:[]};
-  var om=md.match(/\*\*综合评分[:：].*?([\d.]+)\/100/);
-  if(om){d.overallScore=Math.round(parseFloat(om[1])*10/100);}
-  var dims=[
-    ["大盘表现",/\| 大盘表现.*?\| (\d+) \|/],
-    ["赚钱效应",/\| 赚钱效应.*?\| (\d+) \|/],
-    ["风险控制",/\| 风险控制.*?\| (\d+) \|/],
-    ["策略执行",/\| 策略执行.*?\| (\d+) \|/]
-  ];
-  dims.forEach(function(item){var m=md.match(item[1]);if(m)d.dimScores[item[0]]=parseInt(m[1]);});
-  var probM=md.match(/## 四、核心问题分析([\s\S]*?)(?=## 五、|## 六、|$)/);
+  var om=md.match(/\*\*综合评分\*\*\s*\|\s*\*\*([\d.]+)(?:\/10)?\*\*/);
+  if(om){var sv=parseFloat(om[1]);d.overallScore=sv>10?Math.round(sv*10/100):sv;}
+  if(!d.overallScore){var om2=md.match(/\*\*综合评分[:：]\s*([\d.]+)\/10\*\*/);if(om2)d.overallScore=parseFloat(om2[1]);}
+  if(!d.overallScore){var om3=md.match(/综合评分\*\*\s*\|\s*\*\*([\d.]+)\s*\|\s*10/);if(om3)d.overallScore=parseFloat(om3[1]);}
+  var dimKeys=["大盘判断准确率","大盘判断","大盘方向判断","热点方向命中率","热点主线命中率","推荐个股表现","Top10个股命中率","操作建议有效性","风险提示有效性","风险提示准确性","风险控制","风控提示","黑马挖掘能力","推荐个股平均涨幅"];
+  var dimNorm={"大盘判断准确率":"大盘判断","大盘方向判断":"大盘判断","热点主线命中率":"热点命中","热点方向命中率":"热点命中","推荐个股表现":"个股表现","Top10个股命中率":"个股表现","推荐个股平均涨幅":"个股表现","操作建议有效性":"操作建议","风险提示有效性":"风险提示","风险提示准确性":"风险提示","风险控制":"风险提示","风控提示":"风险提示","黑马挖掘能力":"黑马挖掘"};
+  dimKeys.forEach(function(k){
+    var re=new RegExp("\\|\\s*"+reSafe(k)+"\\s*\\|\\s*(\\d+)[/\\s]");
+    var m=md.match(re);
+    if(m){var nk=dimNorm[k]||k;if(!d.dimScores[nk])d.dimScores[nk]=parseInt(m[1]);}
+  });
+  var probM=md.match(/##\s*(?:四、|五、)?核心问题分析([\s\S]*?)(?=##\s*(?:五、|六、)|$)/);
   if(probM){
-    probM[1].split(/### 问题\d+/).filter(function(b){return b.trim();}).forEach(function(block){
-      var tm=block.match(/\*\*现象：\*\*(.*?)(\n|$)/);
+    probM[1].split(/###\s*(?:🔴\s*)?问题\d+/).filter(function(b){return b.trim();}).forEach(function(block){
+      var tm=block.match(/\*\*现象[:：]\*\*\s*(.*?)(\n|$)/);
+      if(!tm)tm=block.match(/-\s*\*\*现象[:：]\*\*\s*(.*?)(\n|$)/);
       if(tm)d.problems.push(tm[1].trim().slice(0,120));
     });
   }
-  var suggM=md.match(/## 五、优化建议([\s\S]*?)(?=## 六、|$)/);
+  var suggM=md.match(/##\s*(?:五、|六、)?优化建议([\s\S]*?)(?=##\s*(?:六、|七、)|$)/);
   if(suggM){
-    suggM[1].split(/### 建议\d+/).filter(function(b){return b.trim();}).forEach(function(block){
-      var tm=block.match(/\*\*问题：\*\*(.*?)(\n|$)/);
+    suggM[1].split(/###\s*建议\d+/).filter(function(b){return b.trim();}).forEach(function(block){
+      var tm=block.match(/\*\*问题[:：]\*\*\s*(.*?)(\n|$)/);
       if(tm)d.suggestions.push(tm[1].trim().slice(0,120));
     });
   }
@@ -408,10 +425,10 @@ function renderDayReport(dt){
     var rv=rd.review;
     html+='<div class="section-title" style="margin-top:1.5rem">🔍 复盘 '+dt+'</div><div class="review-block"><div class="rb-header"><div class="rb-title">综合评分</div><div class="rb-score">'+(rv.overallScore||"—")+'/10</div></div>';
     if(rv.dimScores&&Object.keys(rv.dimScores).length){
-      var dimColors={"大盘判断":"#ef4444","热点方向命中率":"#f59e0b","推荐个股表现":"#3b82f6","操作建议有效性":"#8b5cf6","风险提示准确性":"#10b981"};
+      var dimColors2={"大盘判断":"#ef4444","热点命中":"#f59e0b","个股表现":"#3b82f6","操作建议":"#8b5cf6","风险提示":"#10b981","黑马挖掘":"#f97316"};
       html+='<div style="margin-top:0.8rem">';
       Object.entries(rv.dimScores).forEach(function(kv){
-        var color=dimColors[kv[0]]||"var(--accent)";
+        var color=dimColors2[kv[0]]||"var(--accent)";
         html+='<div class="score-row"><div class="lbl">'+kv[0]+'</div><div class="bar-wrap"><div class="bar" style="width:'+Math.round((kv[1]/10)*100)+'%;background:'+color+'"></div></div><div class="val" style="color:'+color+'">'+kv[1]+'/10</div></div>';
       });
       html+='</div>';
@@ -422,10 +439,62 @@ function renderDayReport(dt){
   document.getElementById("daily-content").classList.remove("hidden");
 }
 
+function renderTrendChart(containerId,seriesList,maxY){
+  var el=document.getElementById(containerId);if(!el||!seriesList.length)return;
+  var W=600,H=260,PL=48,PR=20,PT=20,PB=36;
+  var cw=W-PL-PR,ch=H-PT-PB;
+  var labels=seriesList[0].data.map(function(d){return d.label;});
+  var n=labels.length;if(n<2){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:2rem">数据不足，至少需要2天</div>';return;}
+  var stepX=cw/(n-1);
+  var svg='<svg class="trend-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+  for(var yi=0;yi<=maxY;yi+=2){
+    var y=PT+ch-(yi/maxY)*ch;
+    svg+='<line x1="'+PL+'" y1="'+y+'" x2="'+(W-PR)+'" y2="'+y+'" class="trend-grid-line"/>';
+    svg+='<text x="'+(PL-8)+'" y="'+(y+3)+'" class="trend-axis-label" text-anchor="end">'+yi+'</text>';
+  }
+  labels.forEach(function(lbl,i){
+    var x=PL+i*stepX;
+    svg+='<text x="'+x+'" y="'+(H-PB+20)+'" class="trend-axis-label" text-anchor="middle">'+lbl+'</text>';
+  });
+  seriesList.forEach(function(series){
+    var pts=series.data.map(function(d,i){return{x:PL+i*stepX,y:PT+ch-(d.value/maxY)*ch};});
+    var areaPath='M'+pts[0].x+','+pts[0].y;
+    pts.forEach(function(p,i){if(i>0)areaPath+=' L'+p.x+','+p.y;});
+    areaPath+=' L'+pts[pts.length-1].x+','+(PT+ch)+' L'+pts[0].x+','+(PT+ch)+' Z';
+    svg+='<path d="'+areaPath+'" fill="'+series.color+'" class="trend-area"/>';
+    var linePath=pts.map(function(p,i){return(i===0?'M':'L')+p.x+','+p.y;}).join(' ');
+    svg+='<path d="'+linePath+'" class="trend-line" stroke="'+series.color+'"/>';
+    pts.forEach(function(p,i){
+      svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="'+series.color+'" class="trend-dot" data-tip="'+series.name+' '+labels[i]+': '+series.data[i].value+'"/>';
+    });
+  });
+  svg+='</svg>';
+  var legend='<div class="trend-legend">'+seriesList.map(function(s){
+    return'<div class="trend-legend-item"><span class="trend-legend-dot" style="background:'+s.color+'"></span>'+s.name+'</div>';
+  }).join('')+'</div>';
+  el.innerHTML=svg+legend+'<div class="trend-tooltip" id="tip-'+containerId+'"></div>';
+  el.querySelectorAll('.trend-dot').forEach(function(dot){
+    dot.addEventListener('mouseenter',function(e){
+      var tip=document.getElementById('tip-'+containerId);
+      var rect=el.getBoundingClientRect();
+      var svgEl=el.querySelector('.trend-svg');
+      var svgRect=svgEl.getBoundingClientRect();
+      var scaleX=svgRect.width/W;
+      var cx=parseFloat(dot.getAttribute('cx'))*scaleX+svgRect.left-rect.left;
+      var cy=parseFloat(dot.getAttribute('cy'))*(svgRect.height/H)+svgRect.top-rect.top;
+      tip.textContent=dot.getAttribute('data-tip');
+      tip.style.left=cx+'px';tip.style.top=cy+'px';tip.style.opacity='1';
+    });
+    dot.addEventListener('mouseleave',function(){
+      document.getElementById('tip-'+containerId).style.opacity='0';
+    });
+  });
+}
+
 function renderReview(){
   var allProblems={};
   var allSuggestions={};
-  var dimAll={大盘判断:[],热点方向命中率:[],推荐个股表现:[],操作建议有效性:[],风险提示准确性:[]};
+  var dimAll={大盘判断:[],热点命中:[],个股表现:[],操作建议:[],风险提示:[]};
   var dayScores=[];
   DATES.forEach(function(dt){
     var rd=WEEKLY_DATA[dt];
@@ -448,15 +517,13 @@ function renderReview(){
     document.getElementById('day-score-cards').innerHTML+='<div class="day-score-card" style="border-color:var(--accent)"><div class="date">平均</div><div class="score">'+avgOverall.toFixed(1)+'</div><div class="max">/10</div></div>';
   }
 
-  var dimColors={"大盘判断":"#ef4444","热点方向命中率":"#f59e0b","推荐个股表现":"#3b82f6","操作建议有效性":"#8b5cf6","风险提示准确性":"#10b981"};
-  var dimHTML='';
+  var dimColors={"大盘判断":"#ef4444","热点命中":"#f59e0b","个股表现":"#3b82f6","操作建议":"#8b5cf6","风险提示":"#10b981","黑马挖掘":"#f97316"};
+  renderTrendChart('overall-trend',[{name:'综合评分',color:'var(--accent)',data:dayScores.map(function(d){return{label:d.date.slice(5),value:d.score};})}],10);
+  var dimSeries=[];
   Object.entries(dimAll).filter(function(kv){return kv[1].length>0;}).forEach(function(kv){
-    var k=kv[0],vals=kv[1];
-    var avg=vals.reduce(function(s,v){return s+v.val;},0)/vals.length;
-    var color=dimColors[k]||"var(--accent)";
-    dimHTML+='<div class="score-row"><div class="lbl">'+k+'</div><div class="bar-wrap"><div class="bar" style="width:'+Math.round((avg/10)*100)+'%;background:'+color+'"></div></div><div class="val" style="color:'+color+'">'+avg.toFixed(1)+'/10</div></div>';
+    dimSeries.push({name:kv[0],color:dimColors[kv[0]]||'var(--accent)',data:kv[1].map(function(v){return{label:v.date.slice(5),value:v.val};})});
   });
-  document.getElementById('dim-scores').innerHTML=dimHTML;
+  if(dimSeries.length)renderTrendChart('dim-trend',dimSeries,10);
 
   var probList=Object.entries(allProblems).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
   document.getElementById('common-problems').innerHTML=probList.map(function(item){
