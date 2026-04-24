@@ -196,9 +196,11 @@ var RAW = window.__src;
 
 var DAY_NAME_MAP={0:'周日',1:'周一',2:'周二',3:'周三',4:'周四',5:'周五',6:'周六'};
 var DATES=[];
-for(var di=6;di>=0;di--){
-  var d=new Date();
-  d.setDate(d.getDate()-di);
+var BASE=new Date();
+BASE.setDate(BASE.getDate()-6);
+for(var di=0;di<7;di++){
+  var d=new Date(BASE);
+  d.setDate(d.getDate()+di);
   DATES.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
 }
 var DAY_NAMES=DATES.map(function(d){var m=d.match(/(\d{4})-(\d{2})-(\d{2})/);var dt=new Date(m[1],m[2]-1,m[3]);return DAY_NAME_MAP[dt.getDay()];});
