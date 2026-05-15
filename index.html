@@ -532,37 +532,67 @@ function parseAuction(md,date){
 
 function parseIntraday(md,date){
   var d={date:date,indices:[],mood:'',sectors:[],top5:[],bot5:[],ops:[],timeline:[]};
-  var idxRe=/\| (.+?) \| (¥?)([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
-  var m;
-  while((m=idxRe.exec(md))!==null){
-    var ch=parseChangeStr(m[4]+' '+m[5]+'%');
-    d.indices.push({name:m[1],val:m[3],dir:ch.dir,val2:ch.val});
-  }
+
+  // Parse indices - line-split approach (same as parsePremarket)
+  var lines=md.split('\n');
+  var inIdxSection=false;
+  lines.forEach(function(line){
+    if(inIdxSection&&line.match(/^\|/)){
+      var cells=line.split('|').map(function(c){return c.trim();}).filter(function(c){return c;});
+      if(cells.length>=3){
+        var name=cells[0];
+        var priceCell=cells[1].replace(/^¥/,'');
+        var lastCell=cells[cells.length-1];
+        var emojiM=lastCell.match(/^([🟢🔴⚪])/);
+        var ch=emojiM?parseChangeStr(lastCell):parseChangeStr(cells[cells.length-2]+' '+lastCell);
+        d.indices.push({name:name,val:priceCell,dir:ch.dir,val2:ch.val});
+      }
+    }
+    else if(line.match(/指数表现/)||line.match(/大盘概览/))inIdxSection=true;
+    else if(inIdxSection&&!line.match(/^\|/)&&line.trim()&&!line.match(/^[-*_]{3,}\s*$/))inIdxSection=false;
+  });
+
   var moodM=md.match(/\*\*早盘情绪:\*\*\s*([^\n]+)/);
   if(moodM)d.mood=moodM[1].trim();
-  var sectorRe=/\| ?(.+?) ?\| ([🟢🔴⚪])\s*([+-]?[\d.]+)% ?\| ?(.+?) ?$/gm;
-  while((m=sectorRe.exec(md))!==null){
-    var ch=parseChangeStr(m[2]+' '+m[3]+'%');
-    d.sectors.push({name:m[1],dir:ch.dir,val:ch.val,logic:m[4].trim()});
-  }
-  // Top 5
+
+  // Parse sectors - line-split approach
+  var inSectorTable=false;
+  lines.forEach(function(line){
+    if(line.match(/板块排行/)||line.match(/板块.*涨幅.*逻辑/))inSectorTable=true;
+    else if(inSectorTable&&line.match(/^\|/)){
+      var cells=line.split('|').map(function(c){return c.trim();}).filter(function(c){return c;});
+      if(cells.length>=3&&!cells[0].match(/^[:\-]/)&&!cells[0].match(/^板块$/)&&cells[0]!=='板块'){
+        var nm=cells[0].replace(/[🥇🥈🥉]/g,'').trim();
+        var ch=parseChangeStr(cells[1]);
+        var logic=cells[cells.length-1];
+        if(nm&&!nm.match(/板块|平均涨幅|逻辑/)&&ch.val>0){
+          d.sectors.push({name:nm,dir:ch.dir,val:ch.val,logic:logic});
+        }
+      }
+    }
+    else if(inSectorTable&&!line.match(/^\|/)&&line.trim()==='')inSectorTable=false;
+  });
+
+  // Top 5 - improved row regex
   var topM=md.match(/\*\*涨幅榜 Top 5\*\*([\s\S]*?)(?=\*\*跌幅榜|$)/);
   if(topM){
-    var rowRe=/([💻📊🔧🤖🧠🔋]+)?(.+?)\s*\((\d+)\).*?(人形机器人|AI应用|半导体设备|AI算力|储能|.+?)\s*([🟢🔴⚪])\s*([+-]?[\d.]+)%/g;
+    var rowRe=/\| ?([🤖💻📊🔧🧠🔋]*)?(.+?) ?\| (\d{6}) \| (.+?) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|$/gm;
     while((m=rowRe.exec(topM[1]))!==null){
       var ch=parseChangeStr(m[5]+' '+m[6]+'%');
-      d.top5.push({emoji:m[1]||'📊',name:m[2],code:m[3],sector:m[4],dir:ch.dir,val:ch.val});
+      d.top5.push({emoji:m[1]||'📊',name:m[2].trim(),code:m[3],sector:m[4],dir:ch.dir,val:ch.val});
     }
   }
+
   // Bot 5
-  var botM=md.match(/\*\*跌幅榜 Top 5\*\*([\s\S]*?)(?=下午操作|$)/);
+  var botM=md.match(/\*\*跌幅榜 Top 5\*\*([\s\S]*?)(?=\*\*下午操作|$)/);
   if(botM){
-    var rowRe=/([💻📊🔧🤖🧠🔋]+)?(.+?)\s*\((\d+)\).*?(人形机器人|AI应用|半导体设备|AI算力|储能|.+?)\s*([🟢🔴⚪])\s*([+-]?[\d.]+)%/g;
+    var rowRe=/\| ?([🤖💻📊🔧🧠🔋]*)?(.+?) ?\| (\d{6}) \| (.+?) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|$/gm;
     while((m=rowRe.exec(botM[1]))!==null){
       var ch=parseChangeStr(m[5]+' '+m[6]+'%');
-      d.bot5.push({emoji:m[1]||'📊',name:m[2],code:m[3],sector:m[4],dir:ch.dir,val:ch.val});
+      d.bot5.push({emoji:m[1]||'📊',name:m[2].trim(),code:m[3],sector:m[4],dir:ch.dir,val:ch.val});
     }
   }
+
   var opsM=md.match(/\*\*注意事项:\*\*\s*([\s\S]*?)(?=\*\*下午时间线|$)/);
   if(opsM)d.opsText=opsM[1].trim();
   d.timeline=[
