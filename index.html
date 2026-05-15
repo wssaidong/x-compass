@@ -443,7 +443,7 @@ function parsePremarket(md,date){
         d.indices.push({name:name,val:priceCell,dir:ch.dir,val2:ch.val});
       }
     }
-    else if(inIdxSection&&!line.match(/^\|/)&&line.trim())inIdxSection=false;
+    else if(inIdxSection&&!line.match(/^\|/)&&line.trim()&&!line.match(/^[-*_]{3,}\s*$/))inIdxSection=false;
   });
 
   // Mood
@@ -459,7 +459,8 @@ function parsePremarket(md,date){
     else if(inSectorTable&&line.match(/^\|/)){
       var cells=line.split('|').map(function(c){return c.trim();}).filter(function(c){return c;});
       // cells[0]=板块名, cells[1]=涨幅(含emoji), cells[2]=关注逻辑
-      if(cells.length>=3&&!cells[0].match(/^[:\-]/)){
+      // Skip separator rows like |:----:|...  and header rows |板块|今日均涨幅|关注逻辑|
+      if(cells.length>=3&&!cells[0].match(/^[:\-]/)&&!cells[0].match(/^板块$/)&&cells[0]!=='板块'){
         var nm=cells[0].replace(/[🥇🥈🥉]/g,'').trim();
         var ch=parseChangeStr(cells[1]);
         var logic=cells[cells.length-1];
