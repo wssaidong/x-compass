@@ -424,28 +424,28 @@ function switchPhase(phase){
 function parsePremarket(md,date){
   var d={date:date,indices:[],sectors:[],mood:'',op:'',stocks:[],timeline:[]};
   // Indices
-  var idxRe=/\| (.+?) \| [.¥¥]?([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
+  var idxRe=/\| (.+?) \| (¥?)([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
   var m;
   while((m=idxRe.exec(md))!==null){
-    var ch=parseChangeStr(m[3]+' '+m[4]+'%');
-    d.indices.push({name:m[1],val:m[2],dir:ch.dir,val2:ch.val});
+    var ch=parseChangeStr(m[4]+' '+m[5]+'%');
+    d.indices.push({name:m[1],val:m[3],dir:ch.dir,val2:ch.val});
   }
   // Mood
   var moodM=md.match(/\*\*市场情绪:\*\*\s*([^\n]+)/);
   if(moodM)d.mood=moodM[1].trim();
   var opM=md.match(/\*\*操作建议:\*\*\s*([^\n]+)/);
   if(opM)d.op=opM[1].trim();
-  // Sectors
-  var sectorRe=/\| (.+?) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \| (.+?) \*/g;
+  // Sectors - actual format: | 储能/绿电 | 🟢 -1.21% | 碳中和+装机旺季 |
+  var sectorRe=/\| ?(.+?) ?\| ([🟢🔴⚪])\s*([+-]?[\d.]+)% ?\| ?(.+?) ?$/gm;
   var rank=1;
   while((m=sectorRe.exec(md))!==null){
     var ch=parseChangeStr(m[2]+' '+m[3]+'%');
-    d.sectors.push({name:m[1],dir:ch.dir,val:ch.val,logic:m[4].trim()});
+    d.sectors.push({name:m[1].trim(),dir:ch.dir,val:ch.val,logic:m[4].trim()});
     rank++;
   }
-  // If sectors empty, try table rows
+  // If sectors empty, try table rows format: | 板块 | 今日均涨幅 | 关注逻辑 |
   if(d.sectors.length===0){
-    var tblM=md.match(/\| 板块.*\n\|[:\-|\s]+\n((?:\|[^\n]+\n)+)/);
+    var tblM=md.match(/\| ?板块[ :]*.*\n\|[:\-\s]+\n((?:\| ?[^\n]+\n)+)/);
     if(tblM){
       tblM[1].split('\n').filter(function(l){return l.startsWith('|')&&!/^\|[-\s:]/.test(l);}).forEach(function(row){
         var cells=row.split('|').filter(function(c){return c.trim();});
@@ -512,15 +512,15 @@ function parseAuction(md,date){
 
 function parseIntraday(md,date){
   var d={date:date,indices:[],mood:'',sectors:[],top5:[],bot5:[],ops:[],timeline:[]};
-  var idxRe=/\| (.+?) \| [.¥]?([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
+  var idxRe=/\| (.+?) \| (¥?)([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
   var m;
   while((m=idxRe.exec(md))!==null){
-    var ch=parseChangeStr(m[3]+' '+m[4]+'%');
-    d.indices.push({name:m[1],val:m[2],dir:ch.dir,val2:ch.val});
+    var ch=parseChangeStr(m[4]+' '+m[5]+'%');
+    d.indices.push({name:m[1],val:m[3],dir:ch.dir,val2:ch.val});
   }
   var moodM=md.match(/\*\*早盘情绪:\*\*\s*([^\n]+)/);
   if(moodM)d.mood=moodM[1].trim();
-  var sectorRe=/\| (.+?) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \| (.+?) \*/g;
+  var sectorRe=/\| ?(.+?) ?\| ([🟢🔴⚪])\s*([+-]?[\d.]+)% ?\| ?(.+?) ?$/gm;
   while((m=sectorRe.exec(md))!==null){
     var ch=parseChangeStr(m[2]+' '+m[3]+'%');
     d.sectors.push({name:m[1],dir:ch.dir,val:ch.val,logic:m[4].trim()});
@@ -556,17 +556,17 @@ function parseIntraday(md,date){
 
 function parseClose(md,date){
   var d={date:date,indices:[],analysis:{},sectors:[],strong:[],weak:[],ops:{},timeline:[]};
-  var idxRe=/\| (.+?) \| [.¥]?([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
+  var idxRe=/\| (.+?) \| (¥?)([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
   var m;
   while((m=idxRe.exec(md))!==null){
-    var ch=parseChangeStr(m[3]+' '+m[4]+'%');
-    d.indices.push({name:m[1],val:m[2],dir:ch.dir,val2:ch.val});
+    var ch=parseChangeStr(m[4]+' '+m[5]+'%');
+    d.indices.push({name:m[1],val:m[3],dir:ch.dir,val2:ch.val});
   }
   var featM=md.match(/\*\*尾盘特征:\*\*\s*([^\n]+)/);
   if(featM)d.analysis.feature=featM[1].trim();
   var judgeM=md.match(/\*\*分析判断:\*\*\s*([^\n]+)/);
   if(judgeM)d.analysis.judge=judgeM[1].trim();
-  var sectorRe=/\| (.+?) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \| (.+?) \*/g;
+  var sectorRe=/\| ?(.+?) ?\| ([🟢🔴⚪])\s*([+-]?[\d.]+)% ?\| ?(.+?) ?$/gm;
   while((m=sectorRe.exec(md))!==null){
     var ch=parseChangeStr(m[2]+' '+m[3]+'%');
     d.sectors.push({name:m[1],dir:ch.dir,val:ch.val,eval_:m[4].trim()});
