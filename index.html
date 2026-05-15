@@ -443,7 +443,7 @@ function parsePremarket(md,date){
         d.indices.push({name:name,val:priceCell,dir:ch.dir,val2:ch.val});
       }
     }
-    else if(inIdxSection&&!line.match(/^\|/))inIdxSection=false;
+    else if(inIdxSection&&!line.match(/^\|/)&&line.trim())inIdxSection=false;
   });
 
   // Mood
@@ -452,8 +452,8 @@ function parsePremarket(md,date){
   var opM=md.match(/\*\*操作建议:\*\*\s*([^\n]+)/);
   if(opM)d.op=opM[1].trim();
 
-  // Parse sectors - try markdown table format: | 板块 | 今日均涨幅 | 关注逻辑 |
-  var tblM=md.match(/\| ?板块[ :]*.*\n\|[:\-\s]+\n((?:\| ?[^\n]+\n?)+)/);
+  // Parse sectors - table format: | 板块 | 今日均涨幅 | 关注逻辑 |
+  var tblM=md.match(/\| ?板块[ :]*.*?\n\|[:\-\s]+\n((?:\|[^\n]*\n?)+)/);
   if(tblM){
     tblM[1].split('\n').filter(function(l){return l.startsWith('|')&&!/^\|[-\s:]/.test(l);}).forEach(function(row){
       var cells=row.split('|').map(function(c){return c.trim();}).filter(function(c){return c;});
