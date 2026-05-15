@@ -452,20 +452,24 @@ function parsePremarket(md,date){
   var opM=md.match(/\*\*操作建议:\*\*\s*([^\n]+)/);
   if(opM)d.op=opM[1].trim();
 
-  // Parse sectors - table format: | 板块 | 今日均涨幅 | 关注逻辑 |
-  var tblM=md.match(/\| ?板块[ :]*.*?\n\|[:\-\s]+\n((?:\|[^\n]*\n?)+)/);
-  if(tblM){
-    tblM[1].split('\n').filter(function(l){return l.startsWith('|')&&!/^\|[-\s:]/.test(l);}).forEach(function(row){
-      var cells=row.split('|').map(function(c){return c.trim();}).filter(function(c){return c;});
-      if(cells.length>=3){
+  // Parse sectors - use same line-split approach as indices (more robust)
+  var inSectorTable=false;
+  lines.forEach(function(line){
+    if(line.match(/热点板块/)||line.match(/板块.*涨幅.*逻辑/))inSectorTable=true;
+    else if(inSectorTable&&line.match(/^\|/)){
+      var cells=line.split('|').map(function(c){return c.trim();}).filter(function(c){return c;});
+      // cells[0]=板块名, cells[1]=涨幅(含emoji), cells[2]=关注逻辑
+      if(cells.length>=3&&!cells[0].match(/^[:\-]/)){
         var nm=cells[0].replace(/[🥇🥈🥉]/g,'').trim();
-        // cells[1] like '🟢 -1.21%' or '-1.21%'
         var ch=parseChangeStr(cells[1]);
         var logic=cells[cells.length-1];
-        if(nm&&ch.val>0)d.sectors.push({name:nm,dir:ch.dir,val:ch.val,logic:logic});
+        if(nm&&ch.val>0&&!nm.match(/板块|今日均涨幅|关注逻辑/)){
+          d.sectors.push({name:nm,dir:ch.dir,val:ch.val,logic:logic});
+        }
       }
-    });
-  }
+    }
+    else if(inSectorTable&&!line.match(/^\|/)&&line.trim()==='')inSectorTable=false;
+  });
   // Stocks
   var stockRe=/([💻📊🔧🤖🧠🔋]+)(.+?)\s*\((\d+)\)\s*([🟢🔴⚪])\s*([+-]?[\d.]+)%/g;
   while((m=stockRe.exec(md))!==null){
