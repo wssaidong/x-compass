@@ -423,40 +423,48 @@ function switchPhase(phase){
 
 function parsePremarket(md,date){
   var d={date:date,indices:[],sectors:[],mood:'',op:'',stocks:[],timeline:[]};
-  // Indices
-  var idxRe=/\| (.+?) \| (¥?)([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
-  var m;
-  while((m=idxRe.exec(md))!==null){
-    var ch=parseChangeStr(m[4]+' '+m[5]+'%');
-    d.indices.push({name:m[1],val:m[3],dir:ch.dir,val2:ch.val});
-  }
+
+  // Parse indices by splitting lines - robust vs regex issues
+  var lines=md.split('\n');
+  var inIdxSection=false;
+  lines.forEach(function(line){
+    if(line.match(/大盘概览/)||line.match(/上证指数|深证成指|创业板|科创50/))inIdxSection=true;
+    else if(inIdxSection&&line.match(/^\|/)){
+      var cells=line.split('|').map(function(c){return c.trim();}).filter(function(c){return c;});
+      // cells: [name, price+emoji, change+pct] or [name, price, emoji, change+pct]
+      if(cells.length>=3){
+        var name=cells[0];
+        // Price: cells[1] might be ¥11.05 or just 11.05
+        var priceCell=cells[1].replace(/^¥/,'');
+        // Last cell: emoji + change
+        var lastCell=cells[cells.length-1];
+        var emojiM=lastCell.match(/^([🟢🔴⚪])/);
+        var ch=emojiM?parseChangeStr(lastCell):parseChangeStr(cells[cells.length-2]+' '+lastCell);
+        d.indices.push({name:name,val:priceCell,dir:ch.dir,val2:ch.val});
+      }
+    }
+    else if(inIdxSection&&!line.match(/^\|/))inIdxSection=false;
+  });
+
   // Mood
   var moodM=md.match(/\*\*市场情绪:\*\*\s*([^\n]+)/);
   if(moodM)d.mood=moodM[1].trim();
   var opM=md.match(/\*\*操作建议:\*\*\s*([^\n]+)/);
   if(opM)d.op=opM[1].trim();
-  // Sectors - actual format: | 储能/绿电 | 🟢 -1.21% | 碳中和+装机旺季 |
-  var sectorRe=/\| ?(.+?) ?\| ([🟢🔴⚪])\s*([+-]?[\d.]+)% ?\| ?(.+?) ?$/gm;
-  var rank=1;
-  while((m=sectorRe.exec(md))!==null){
-    var ch=parseChangeStr(m[2]+' '+m[3]+'%');
-    d.sectors.push({name:m[1].trim(),dir:ch.dir,val:ch.val,logic:m[4].trim()});
-    rank++;
-  }
-  // If sectors empty, try table rows format: | 板块 | 今日均涨幅 | 关注逻辑 |
-  if(d.sectors.length===0){
-    var tblM=md.match(/\| ?板块[ :]*.*\n\|[:\-\s]+\n((?:\| ?[^\n]+\n)+)/);
-    if(tblM){
-      tblM[1].split('\n').filter(function(l){return l.startsWith('|')&&!/^\|[-\s:]/.test(l);}).forEach(function(row){
-        var cells=row.split('|').filter(function(c){return c.trim();});
-        if(cells.length>=4){
-          var nm=cells[1].trim().replace(/[🥇🥈🥉]/g,'').trim();
-          var ch=parseChangeStr(cells[2].trim());
-          var logic=cells[3].trim();
-          d.sectors.push({name:nm,dir:ch.dir,val:ch.val,logic:logic});
-        }
-      });
-    }
+
+  // Parse sectors - try markdown table format: | 板块 | 今日均涨幅 | 关注逻辑 |
+  var tblM=md.match(/\| ?板块[ :]*.*\n\|[:\-\s]+\n((?:\| ?[^\n]+\n?)+)/);
+  if(tblM){
+    tblM[1].split('\n').filter(function(l){return l.startsWith('|')&&!/^\|[-\s:]/.test(l);}).forEach(function(row){
+      var cells=row.split('|').map(function(c){return c.trim();}).filter(function(c){return c;});
+      if(cells.length>=3){
+        var nm=cells[0].replace(/[🥇🥈🥉]/g,'').trim();
+        // cells[1] like '🟢 -1.21%' or '-1.21%'
+        var ch=parseChangeStr(cells[1]);
+        var logic=cells[cells.length-1];
+        if(nm&&ch.val>0)d.sectors.push({name:nm,dir:ch.dir,val:ch.val,logic:logic});
+      }
+    });
   }
   // Stocks
   var stockRe=/([💻📊🔧🤖🧠🔋]+)(.+?)\s*\((\d+)\)\s*([🟢🔴⚪])\s*([+-]?[\d.]+)%/g;
