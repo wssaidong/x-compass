@@ -3,619 +3,764 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Stock Weekly · 周度综合看板</title>
+<title>AAna · A股每日看盘</title>
 <style>
 :root{
-  --bg:#f4f6fb;--surface:#ffffff;--card:#ffffff;--card2:#f8fafc;--border:#e8ecf2;--border2:#dde2ec;
-  --accent:#5b5fd6;--accent-light:rgba(91,95,214,0.07);--accent2:#818cf8;
-  --green:#10b981;--green-bg:rgba(16,185,129,0.05);
-  --red:#ef4444;--red-light:rgba(239,68,68,0.08);
-  --yellow:#f59e0b;--yellow-light:rgba(245,158,11,0.08);
-  --text:#1a1d2e;--text2:#4b5672;--text3:#8896b3;
-  --radius:16px;--radius-sm:10px;
-  --shadow:0 1px 3px rgba(0,0,0,0.04),0 4px 12px rgba(0,0,0,0.04);
-  --shadow-md:0 4px 16px rgba(0,0,0,0.06),0 1px 4px rgba(0,0,0,0.04);
-  --shadow-lg:0 8px 32px rgba(0,0,0,0.08),0 2px 8px rgba(0,0,0,0.04);
-  --shadow-accent:0 4px 16px rgba(91,95,214,0.22);
+  --bg:#0d1117;--surface:#161b22;--card:#1c2128;--card2:#21262d;--border:#30363d;--border2:#3d444d;
+  --accent:#58a6ff;--accent-light:rgba(88,166,255,0.08);--accent2:#79c0ff;
+  --green:#3fb950;--green-bg:rgba(63,185,80,0.06);
+  --red:#f85149;--red-bg:rgba(248,81,73,0.08);
+  --yellow:#d29922;--yellow-bg:rgba(210,153,34,0.08);
+  --orange:#f0883e;--orange-bg:rgba(240,136,62,0.08);
+  --text:#e6edf3;--text2:#8b949e;--text3:#6e7681;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,0.3),0 4px 12px rgba(0,0,0,0.2);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.35);
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html{scroll-behavior:smooth}
-body{font-family:'Inter','PingFang SC','Microsoft YaHei',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.65;-webkit-font-smoothing:antialiased}
-.container{max-width:1240px;margin:0 auto;padding:2.5rem 2rem 4rem}
+body{font-family:'Inter','PingFang SC','Microsoft YaHei',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6;-webkit-font-smoothing:antialiased}
+.container{max-width:1200px;margin:0 auto;padding:2rem 1.5rem 4rem}
 .hidden{display:none!important}
-.header{position:sticky;top:0;z-index:100;background:var(--bg);padding:1.5rem 0 1.25rem;margin-bottom:2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
-.logo{display:flex;align-items:center;gap:1.25rem}
-.logo-icon{width:52px;height:52px;background:linear-gradient(148deg,var(--accent),var(--accent2));border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.5rem;box-shadow:var(--shadow-accent);transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1)}
+.header{position:sticky;top:0;z-index:100;background:var(--bg);padding:1.25rem 0 1rem;margin-bottom:1.75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+.logo{display:flex;align-items:center;gap:1rem}
+.logo-icon{width:46px;height:46px;background:linear-gradient(148deg,#1f6feb,#58a6ff);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.35rem;box-shadow:0 4px 12px rgba(88,166,255,0.25);transition:transform 0.2s cubic-bezier(0.34,1.56,0.64,1)}
 .logo-icon:hover{transform:scale(1.06) rotate(-2deg)}
-.brand h1{font-size:1.5rem;font-weight:800;color:var(--text);letter-spacing:-0.025em;line-height:1.2}
-.brand p{font-size:0.82rem;color:var(--text2);margin-top:0.2rem;font-weight:400}
-.badge-live{display:flex;align-items:center;gap:0.5rem;background:var(--green-bg);border:1px solid rgba(16,185,129,0.18);border-radius:100px;padding:0.45rem 1.1rem;font-size:0.8rem;font-weight:600;color:var(--green)}
+.brand h1{font-size:1.35rem;font-weight:800;color:var(--text);letter-spacing:-0.025em}
+.brand p{font-size:0.78rem;color:var(--text2);margin-top:0.15rem}
+.badge-live{display:flex;align-items:center;gap:0.5rem;background:var(--green-bg);border:1px solid rgba(63,185,80,0.2);border-radius:100px;padding:0.4rem 1rem;font-size:0.78rem;font-weight:600;color:var(--green)}
 .badge-live::before{content:'';width:7px;height:7px;background:var(--green);border-radius:50%;animation:pulse 2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.55;transform:scale(0.88)}}
-.tabs{display:flex;gap:0.35rem;background:var(--surface);padding:0.35rem;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow);width:fit-content}
-.tab{padding:0.6rem 1.6rem;border-radius:9px;border:none;background:transparent;color:var(--text2);font-size:0.875rem;font-weight:600;cursor:pointer;transition:all 0.2s cubic-bezier(0.4,0,0.2,1);font-family:inherit}
-.tab:hover{color:var(--accent);background:var(--accent-light)}
-.tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;box-shadow:var(--shadow-accent)}
-.tab-content{display:none;animation:fadeUp 0.28s ease}
-.tab-content.active{display:block}
-@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.1rem;margin-bottom:2.5rem}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem 1.2rem;box-shadow:var(--shadow);transition:all 0.25s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden}
-.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity 0.25s}
-.stat-card:hover{box-shadow:var(--shadow-lg);transform:translateY(-3px)}
-.stat-card:hover::before{opacity:1}
-.stat-card .val{font-size:2.3rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-0.03em;line-height:1;margin-bottom:0.35rem}
-.stat-card .lbl{font-size:0.72rem;color:var(--text2);font-weight:600;text-transform:uppercase;letter-spacing:0.07em}
-.stat-card .sub{font-size:0.75rem;color:var(--green);margin-top:0.35rem;font-weight:600}
-.section-title{font-size:1.05rem;font-weight:700;color:var(--text);margin-bottom:1.1rem;display:flex;align-items:center;gap:0.55rem}
-.section-title .icon{font-size:1.2rem}
-.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem;margin-bottom:1.75rem;box-shadow:var(--shadow)}
-.heatmap-wrap{overflow-x:auto;padding-bottom:0.5rem}
-.heatmap-col-labels{display:flex;gap:4px;margin-left:116px;margin-bottom:7px}
-.heatmap-col-label{width:38px;text-align:center;font-size:0.65rem;color:var(--text3);line-height:1.3;font-weight:500}
-.heatmap-row{display:flex;gap:4px;align-items:center;margin-bottom:4px}
-.heatmap-label{min-width:108px;font-size:0.8rem;font-weight:600;color:var(--text);text-align:right;padding-right:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.heatmap-cells{display:flex;gap:4px}
-.heatmap-cell{width:38px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff;flex-shrink:0;transition:transform 0.15s cubic-bezier(0.34,1.56,0.64,1),box-shadow 0.15s;cursor:default}
-.heatmap-cell:hover{transform:scale(1.12);box-shadow:0 4px 10px rgba(0,0,0,0.15);z-index:2;position:relative}
-.heatmap-cell.up-hot{background:linear-gradient(135deg,#ef4444,#dc2626)}
-.heatmap-cell.up-mid{background:linear-gradient(135deg,#f87171,#ef4444)}
-.heatmap-cell.up-light{background:rgba(239,68,68,0.5)}
-.heatmap-cell.down-hot{background:linear-gradient(135deg,#10b981,#059669)}
-.heatmap-cell.down-mid{background:linear-gradient(135deg,#34d399,#10b981)}
-.heatmap-cell.down-light{background:rgba(16,185,129,0.4)}
-.heatmap-cell.none{background:var(--card2);color:var(--text3);border:1px solid var(--border2)}
-.table-wrap{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
-table{width:100%;border-collapse:collapse;font-size:0.855rem}
-th{background:var(--card2);color:var(--text2);font-weight:600;text-align:left;padding:0.85rem 1.15rem;border-bottom:1px solid var(--border);white-space:nowrap;font-size:0.7rem;text-transform:uppercase;letter-spacing:0.07em}
-td{padding:0.8rem 1.15rem;border-bottom:1px solid var(--border);vertical-align:middle;transition:background 0.12s}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:var(--accent-light)}
-.stock-name{font-weight:600;color:var(--text)}
-.stock-code{color:var(--text3);font-size:0.72rem}
+.phase-bar{display:flex;gap:0.35rem;background:var(--surface);padding:0.3rem;border-radius:11px;border:1px solid var(--border);width:fit-content}
+.phase-btn{padding:0.5rem 1.4rem;border-radius:8px;border:none;background:transparent;color:var(--text2);font-size:0.82rem;font-weight:600;cursor:pointer;transition:all 0.2s;font-family:inherit}
+.phase-btn:hover{color:var(--accent);background:var(--accent-light)}
+.phase-btn.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(88,166,255,0.3)}
+.phase-content{display:none;animation:fadeUp 0.25s ease}
+.phase-content.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.date-label{font-size:0.85rem;color:var(--text3);margin-bottom:1.5rem}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.25rem;box-shadow:var(--shadow)}
+.card-title{font-size:0.88rem;font-weight:700;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
+.card-title .icon{font-size:1.05rem}
+.section-title{font-size:1rem;font-weight:700;color:var(--text);margin:1.5rem 0 0.9rem;display:flex;align-items:center;gap:0.5rem}
+.section-title .icon{font-size:1.1rem}
+/* Index Grid */
+.idx-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.85rem;margin-bottom:0.5rem}
+.idx-card{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:0.9rem 1rem;text-align:center;box-shadow:var(--shadow)}
+.idx-name{font-size:0.68rem;color:var(--text3);font-weight:500;text-transform:uppercase;letter-spacing:0.05em}
+.idx-val{font-size:1.2rem;font-weight:800;margin:0.2rem 0;font-family:'JetBrains Mono',monospace}
+.idx-change{font-size:0.72rem;font-weight:700;font-family:monospace}
+/* Sector Table */
+.sector-table{width:100%;border-collapse:collapse;font-size:0.82rem}
+.sector-table th{color:var(--text3);font-weight:600;text-align:left;padding:0.5rem 0.75rem;border-bottom:1px solid var(--border);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.05em}
+.sector-table td{padding:0.55rem 0.75rem;border-bottom:1px solid var(--border2);vertical-align:middle}
+.sector-table tr:last-child td{border-bottom:none}
+.sector-table tr:hover td{background:var(--accent-light)}
+.rank-badge{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:6px;font-size:0.68rem;font-weight:700}
+.rank-1{background:rgba(255,215,0,0.15);color:#ffd700}
+.rank-2{background:rgba(192,192,192,0.12);color:#c0c0c0}
+.rank-3{background:rgba(205,127,50,0.12);color:#cd7f32}
+.rank-n{background:var(--card2);color:var(--text3)}
 .txt-up{color:var(--red);font-weight:700}
 .txt-down{color:var(--green);font-weight:700}
-.score-badge{display:inline-block;background:linear-gradient(135deg,var(--accent-light),rgba(129,140,248,0.08));color:var(--accent);border-radius:7px;padding:0.2rem 0.55rem;font-weight:700;font-size:0.78rem;border:1px solid rgba(91,95,214,0.12)}
-.rating-stars{color:var(--yellow);letter-spacing:1.5px;font-size:0.72rem}
-.day-tabs{display:flex;gap:0.4rem;margin-bottom:1.75rem;flex-wrap:wrap}
-.day-tab{padding:0.5rem 1.3rem;border-radius:9px;border:1px solid var(--border);background:var(--card);color:var(--text2);font-size:0.85rem;font-weight:600;cursor:pointer;transition:all 0.18s;box-shadow:var(--shadow);font-family:inherit}
-.day-tab:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
-.day-tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border-color:var(--accent);box-shadow:var(--shadow-accent)}
-.day-tab .day-name{display:block;font-size:0.65rem;opacity:0.72;margin-top:0.1rem}
-.day-report-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.75rem;flex-wrap:wrap;gap:0.75rem;padding-bottom:1rem;border-bottom:1px solid var(--border)}
-.day-report-header .date{font-size:1.1rem;font-weight:800;color:var(--text)}
-.day-report-header .meta{font-size:0.8rem;color:var(--text2)}
-.score-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0.85rem;margin-bottom:2rem}
-.score-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem;text-align:center;box-shadow:var(--shadow);transition:all 0.22s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden}
-.score-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-md)}
-.score-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2.5px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transition:opacity 0.2s}
-.score-card:hover::after{opacity:1}
-.score-card .date{font-size:0.68rem;color:var(--text3);margin-bottom:0.4rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em}
-.score-card .score{font-size:2rem;font-weight:800;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1}
-.score-card .max{font-size:0.68rem;color:var(--text3);margin-top:0.15rem}
-.review-block{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.2rem;margin-bottom:0.85rem;box-shadow:var(--shadow);transition:box-shadow 0.2s}
-.review-block:hover{box-shadow:var(--shadow-md)}
-.review-block .rb-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:0.65rem}
-.review-block .rb-title{font-size:0.92rem;font-weight:700;color:var(--text)}
-.review-block .rb-score{font-size:1.2rem;font-weight:800;color:var(--accent)}
-.review-block .rb-meta{font-size:0.8rem;color:var(--text2)}
-.problem-card{background:var(--card);border:1px solid var(--border);border-left:3.5px solid var(--red);border-radius:var(--radius-sm);padding:0.95rem 1.15rem;margin-bottom:0.8rem;box-shadow:var(--shadow)}
-.problem-card h4{color:var(--text);font-size:0.88rem;margin-bottom:0.3rem;font-weight:600}
-.problem-card p{color:var(--text2);font-size:0.8rem}
-.suggestion-card{background:var(--card);border:1px solid var(--border);border-left:3.5px solid var(--yellow);border-radius:var(--radius-sm);padding:0.95rem 1.15rem;margin-bottom:0.8rem;box-shadow:var(--shadow)}
-.suggestion-card h4{color:var(--text);font-size:0.88rem;margin-bottom:0.3rem;font-weight:600}
-.suggestion-card p{color:var(--text2);font-size:0.8rem}
-.dim-card{background:var(--card2);border-radius:var(--radius-sm);padding:0.85rem;margin-bottom:0.6rem;border:1px solid var(--border)}
-.dim-header{display:flex;justify-content:space-between;align-items:center;font-size:0.85rem;color:var(--text);font-weight:600}
-.dim-meta{font-size:0.68rem;color:var(--text3);margin-top:0.3rem}
-.bar-wrap{background:var(--border);border-radius:100px;height:7px;overflow:hidden;margin-top:0.55rem}
-.bar{height:100%;border-radius:100px}
-.idx-card{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:0.85rem 1rem;text-align:center;box-shadow:var(--shadow);min-width:115px}
-.idx-name{font-size:0.7rem;color:var(--text3);font-weight:500}
-.idx-val{font-size:1.05rem;font-weight:800;margin:0.25rem 0}
-.idx-change{font-size:0.7rem;font-weight:600;font-family:monospace}
-.stock-row{display:flex;justify-content:space-between;align-items:center;padding:0.42rem 0;border-bottom:1px solid var(--border);font-size:0.855rem}
-.stock-row:last-child{border-bottom:none}
-.trend-chart{position:relative;padding:1.2rem 1rem 0.8rem}
-.trend-svg{width:100%;height:auto;display:block}
-.trend-grid-line{stroke:var(--border);stroke-width:0.5}
-.trend-axis-label{fill:var(--text3);font-size:10px;font-family:inherit}
-.trend-line{fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
-.trend-dot{cursor:pointer;transition:r 0.15s}
-.trend-dot:hover{r:6}
-.trend-area{opacity:0.08}
-.trend-legend{display:flex;gap:1.2rem;flex-wrap:wrap;padding:0.6rem 0.2rem 0;font-size:0.75rem;color:var(--text2)}
-.trend-legend-item{display:flex;align-items:center;gap:0.35rem;font-weight:600}
-.trend-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-.trend-tooltip{position:absolute;background:var(--text);color:#fff;padding:0.35rem 0.65rem;border-radius:8px;font-size:0.72rem;font-weight:600;pointer-events:none;opacity:0;transition:opacity 0.15s;white-space:nowrap;z-index:10;transform:translate(-50%,-120%)}
-.loading{text-align:center;padding:4.5rem;color:var(--text2)}
-.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.85s linear infinite;margin:0 auto 1.1rem}
+.txt-flat{color:var(--text3);font-weight:600}
+/* Stock Table */
+.stock-table{width:100%;border-collapse:collapse;font-size:0.82rem}
+.stock-table th{color:var(--text3);font-weight:600;text-align:left;padding:0.65rem 0.9rem;border-bottom:1px solid var(--border);white-space:nowrap;font-size:0.68rem;text-transform:uppercase;letter-spacing:0.05em}
+.stock-table td{padding:0.6rem 0.9rem;border-bottom:1px solid var(--border2);vertical-align:middle}
+.stock-table tr:last-child td{border-bottom:none}
+.stock-table tr:hover td{background:var(--accent-light)}
+.stock-name{font-weight:600;color:var(--text)}
+.stock-code{color:var(--text3);font-size:0.7rem;margin-left:0.4rem}
+.stock-tag{display:inline-block;padding:0.1rem 0.45rem;border-radius:4px;font-size:0.62rem;font-weight:600;margin:0.15rem 0.1rem 0}
+.tag-up{background:var(--red-bg);color:var(--red)}
+.tag-down{background:var(--green-bg);color:var(--green)}
+.tag-flat{background:var(--card2);color:var(--text3)}
+.sector-tag{display:inline-block;background:var(--card2);color:var(--text2);border-radius:4px;padding:0.1rem 0.4rem;font-size:0.62rem;font-weight:600}
+.suggest-tag{background:var(--accent-light);color:var(--accent);border-radius:4px;padding:0.1rem 0.4rem;font-size:0.62rem;font-weight:700}
+.sector-rect{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:0.4rem}
+/* Mood */
+.mood-card{display:flex;align-items:center;gap:1.5rem;padding:0.75rem 1rem;background:var(--card2);border-radius:var(--radius-sm);margin-bottom:1rem}
+.mood-icon{font-size:1.5rem}
+.mood-label{font-size:0.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;font-weight:600}
+.mood-value{font-size:0.95rem;font-weight:700;color:var(--text);margin-top:0.1rem}
+.mood-op{font-size:0.78rem;color:var(--text2);margin-top:0.1rem}
+/* Timeline */
+.timeline{display:flex;flex-direction:column;gap:0.5rem;margin-top:1rem}
+.tl-item{display:flex;align-items:center;gap:0.9rem;padding:0.5rem 0;font-size:0.82rem}
+.tl-time{min-width:52px;font-family:monospace;font-size:0.75rem;color:var(--text3);font-weight:600}
+.tl-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;position:relative}
+.tl-dot.done{background:var(--green)}
+.tl-dot.active{background:var(--accent);box-shadow:0 0 0 3px rgba(88,166,255,0.2);animation:pulse 1.5s infinite}
+.tl-dot.pending{background:var(--border2)}
+.tl-line{flex:1;height:1px;background:var(--border2);margin:0 0.5rem}
+.tl-label{font-weight:600;color:var(--text)}
+.tl-label.done{color:var(--green)}
+.tl-label.active{color:var(--accent)}
+.tl-label.pending{color:var(--text3)}
+/* Rec Cards */
+.rec-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.75rem}
+.rec-item{background:var(--card2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0.85rem;display:flex;flex-direction:column;gap:0.35rem}
+.rec-stock{display:flex;align-items:center;gap:0.5rem}
+.rec-name{font-weight:700;font-size:0.9rem}
+.rec-code{font-size:0.7rem;color:var(--text3)}
+.rec-sector{font-size:0.7rem;color:var(--text2)}
+.rec-change{font-size:0.8rem;font-weight:700;margin-top:0.1rem}
+.rec-suggest{font-size:0.68rem;color:var(--accent);font-weight:600}
+.stop-loss{font-size:0.68rem;color:var(--red)}
+/* Split columns */
+.split-2{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:900px){.split-2{grid-template-columns:1fr}}
+@media(max-width:768px){.container{padding:1.25rem 1rem}.header{flex-direction:column;align-items:flex-start}.phase-bar{width:100%}.phase-btn{flex:1;text-align:center;padding:0.5rem 0.3rem;font-size:0.78rem}.idx-grid{grid-template-columns:repeat(2,1fr)}.rec-grid{grid-template-columns:1fr}}
+@media(max-width:480px){.idx-grid{grid-template-columns:1fr 1fr}}
+.loading{text-align:center;padding:4rem;color:var(--text2)}
+.spinner{width:36px;height:36px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.85s linear infinite;margin:0 auto 1rem}
 @keyframes spin{to{transform:rotate(360deg)}}
-.footer{margin-top:4rem;padding-top:1.75rem;border-top:1px solid var(--border);text-align:center;font-size:0.78rem;color:var(--text3)}
-@media(max-width:1024px){.stats-grid{grid-template-columns:repeat(2,1fr)}}
-@media(max-width:768px){.container{padding:1.75rem 1.25rem}.header{flex-direction:column;align-items:flex-start}.tabs{width:100%}.tab{flex:1;text-align:center;padding:0.5rem 0.5rem;font-size:0.82rem}}
-@media(max-width:480px){.stats-grid{grid-template-columns:1fr 1fr;gap:0.85rem}.container{padding:1.25rem 1rem}.stat-card{padding:1rem}.stat-card .val{font-size:1.8rem}.score-cards{grid-template-columns:repeat(2,1fr)}}
-
+.footer{margin-top:3.5rem;padding-top:1.5rem;border-top:1px solid var(--border);text-align:center;font-size:0.75rem;color:var(--text3)}
+.notice-banner{background:var(--yellow-bg);border:1px solid rgba(210,153,34,0.25);border-radius:var(--radius-sm);padding:0.75rem 1rem;font-size:0.8rem;color:var(--yellow);margin-bottom:1.25rem;display:flex;align-items:flex-start;gap:0.6rem}
+.notice-banner .icon{font-size:1rem;flex-shrink:0;margin-top:0.1rem}
 </style>
 </head>
 <body>
 <div class="container">
   <div class="header">
-    <div class="logo"><div class="logo-icon">📊</div><div class="brand"><h1>Stock Weekly</h1><p>周度综合看板 · 最近7天选股报告</p></div></div>
-    <div class="badge-live"><span></span> 每日 9:35 / 17:00 更新</div>
+    <div class="logo">
+      <div class="logo-icon">🦞</div>
+      <div class="brand">
+        <h1>AAna · A股每日看盘</h1>
+        <p id="date-display">2026-05-15 · 交易日</p>
+      </div>
+    </div>
+    <div class="badge-live"><span></span> <span id="update-time">加载中...</span></div>
   </div>
-  <div class="tabs">
-    <button class="tab active" id="tab-btn-overview" onclick="switchTab('overview')">📈 综合看板</button>
-    <button class="tab" id="tab-btn-daily" onclick="switchTab('daily')">📋 每日报告</button>
-    <button class="tab" id="tab-btn-review" onclick="switchTab('review')">🔍 周度复盘</button>
+
+  <div class="phase-bar" id="phase-bar">
+    <button class="phase-btn active" id="phase-btn-premarket" onclick="switchPhase('premarket')">📋 盘前</button>
+    <button class="phase-btn" id="phase-btn-auction" onclick="switchPhase('auction')">⚡ 竞价</button>
+    <button class="phase-btn" id="phase-btn-intraday" onclick="switchPhase('intraday')">📊 盘中</button>
+    <button class="phase-btn" id="phase-btn-close" onclick="switchPhase('close')">🔵 收盘</button>
+    <button class="phase-btn" id="phase-btn-post" onclick="switchPhase('post')">🌙 复盘</button>
   </div>
-  <div id="tab-overview" class="tab-content active">
-    <div class="loading" id="overview-loading"><div class="spinner"></div><div>加载周度数据中...</div></div>
-    <div id="overview-content" class="hidden">
-      <div class="stats-grid" id="stats-row"></div>
-      <div class="section-title"><span class="icon">🔥</span> 个股跨日热度图（Top 15）</div>
-      <div class="card"><div class="heatmap-col-labels" id="heatmap-col-labels"></div><div id="heatmap-grid"></div></div>
-      <div class="section-title"><span class="icon">🏆</span> 持续关注榜（出现 ≥2 天）</div>
-      <div class="table-wrap"><table><thead><tr><th>#</th><th>股票</th><th>代码</th><th>出现日期</th><th>最近评级</th><th>风险</th></tr></thead><tbody id="freq-tbody"></tbody></table></div>
-      <div class="section-title"><span class="icon">📂</span> 板块覆盖（近7天）</div>
-      <div class="card" id="cat-bars"></div>
-      <div class="section-title"><span class="icon">📅</span> 每日综评</div>
-      <div id="day-summaries"></div>
+
+  <div id="loading-screen">
+    <div class="loading"><div class="spinner"></div><div>加载今日看盘数据中...</div></div>
+  </div>
+
+  <!-- 盘前阶段 -->
+  <div id="phase-premarket" class="phase-content active">
+    <div class="date-label" id="premarket-date"></div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📈</span> 大盘概览</div>
+      <div class="idx-grid" id="premarket-idx"></div>
+      <div class="mood-card" id="premarket-mood"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🔥</span> 热点板块（按涨幅排序）</div>
+      <div class="table-wrap">
+        <table class="sector-table">
+          <thead><tr><th></th><th>板块</th><th>今日均涨幅</th><th>关注逻辑</th></tr></thead>
+          <tbody id="premarket-sectors"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">💡</span> 操作建议</div>
+      <div id="premarket-ops"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">⭐</span> 重点关注个股</div>
+      <div id="premarket-stocks"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">⏰</span> 今日时间线</div>
+      <div class="timeline" id="premarket-timeline"></div>
     </div>
   </div>
-  <div id="tab-daily" class="tab-content">
-    <div class="day-tabs" id="day-tabs"></div>
-    <div class="loading" id="daily-loading"><div class="spinner"></div><div>加载每日数据中...</div></div>
-    <div id="daily-content" class="hidden"></div>
-  </div>
-  <div id="tab-review" class="tab-content">
-    <div class="loading" id="review-loading"><div class="spinner"></div><div>加载复盘数据中...</div></div>
-    <div id="review-content" class="hidden">
-      <div class="section-title"><span class="icon">📊</span> 各日综合评分</div>
-      <div class="score-cards" id="day-score-cards"></div>
-      <div class="section-title"><span class="icon">📈</span> 综合评分趋势</div>
-      <div class="card"><div class="trend-chart" id="overall-trend"></div></div>
-      <div class="section-title"><span class="icon">📊</span> 各维度评分趋势</div>
-      <div class="card"><div class="trend-chart" id="dim-trend"></div></div>
-      <div id="idx-tracker"></div>
-      <div id="stock-summary"></div>
-      <div class="section-title" style="color:var(--red)"><span class="icon">⚠️</span> 反复出现的问题</div>
-      <div id="common-problems"></div>
-      <div class="section-title" style="color:var(--yellow)"><span class="icon">💡</span> 高频优化建议</div>
-      <div id="common-suggestions"></div>
+
+  <!-- 竞价阶段 -->
+  <div id="phase-auction" class="phase-content">
+    <div class="date-label" id="auction-date"></div>
+    <div class="notice-banner">
+      <span class="icon">⚠️</span>
+      <div>竞价阶段涨跌超过5%的股票谨慎追入，优先选择竞价涨幅在-3%~3%之间的标的，关注成交额放量情况</div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🎯</span> 竞价精选</div>
+      <div class="table-wrap">
+        <table class="stock-table">
+          <thead><tr><th>股票</th><th>代码</th><th>板块</th><th>昨收</th><th>竞价涨幅</th><th>建议</th></tr></thead>
+          <tbody id="auction-stocks"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📋</span> 操作计划（回调到位）</div>
+      <div id="auction-ops"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">⏰</span> 今日时间线</div>
+      <div class="timeline" id="auction-timeline"></div>
     </div>
   </div>
-  <div id="dbg" style="position:fixed;bottom:10px;left:10px;background:rgba(0,0,0,0.85);color:#0f0;font-size:11px;padding:4px 8px;border-radius:4px;z-index:9999;min-width:200px;display:block"></div>
-  <div class="footer">Stock Weekly · 数据来源：公开市场信息 · 仅供参考，不构成投资建议</div>
+
+  <!-- 盘中阶段 -->
+  <div id="phase-intraday" class="phase-content">
+    <div class="date-label" id="intraday-date"></div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📈</span> 上午盘面回顾</div>
+      <div class="mood-card" id="intraday-mood"></div>
+      <div class="idx-grid" id="intraday-idx" style="margin-top:1rem"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🔥</span> 板块排行（上午）</div>
+      <div class="table-wrap">
+        <table class="sector-table">
+          <thead><tr><th></th><th>板块</th><th>平均涨幅</th><th>逻辑</th></tr></thead>
+          <tbody id="intraday-sectors"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="split-2">
+      <div class="card">
+        <div class="card-title"><span class="icon">🔴</span> 涨幅榜 Top 5</div>
+        <div id="intraday-top5"></div>
+      </div>
+      <div class="card">
+        <div class="card-title"><span class="icon">🟢</span> 跌幅榜 Top 5</div>
+        <div id="intraday-bot5"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">💡</span> 下午操作建议</div>
+      <div id="intraday-ops"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">⏰</span> 下午时间线</div>
+      <div class="timeline" id="intraday-timeline"></div>
+    </div>
+  </div>
+
+  <!-- 收盘阶段 -->
+  <div id="phase-close" class="phase-content">
+    <div class="date-label" id="close-date"></div>
+    <div class="card">
+      <div class="card-title"><span class="icon">📊</span> 尾盘走势分析</div>
+      <div class="idx-grid" id="close-idx" style="margin-bottom:1rem"></div>
+      <div id="close-analysis"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🔥</span> 板块表现（收盘）</div>
+      <div class="table-wrap">
+        <table class="sector-table">
+          <thead><tr><th></th><th>板块</th><th>收盘涨幅</th><th>评价</th></tr></thead>
+          <tbody id="close-sectors"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="split-2">
+      <div class="card">
+        <div class="card-title" style="color:var(--orange)"><span class="icon">🚀</span> 强势股（涨幅>2%且强于大盘）</div>
+        <div id="close-strong"></div>
+      </div>
+      <div class="card">
+        <div class="card-title" style="color:var(--red)"><span class="icon">📉</span> 超跌关注（跌幅>4%且弱于大盘）</div>
+        <div id="close-weak"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">💡</span> 明日操作建议</div>
+      <div id="close-ops"></div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="icon">🔵</span> 收盘时间线</div>
+      <div class="timeline" id="close-timeline"></div>
+    </div>
+  </div>
+
+  <!-- 复盘阶段 -->
+  <div id="phase-post" class="phase-content">
+    <div class="date-label">盘后数据 · 仅供个人复盘参考</div>
+    <div class="notice-banner" style="background:var(--red-bg);border-color:rgba(248,81,73,0.2);color:var(--red)">
+      <span class="icon">📝</span>
+      <div>本工具仅供个人复盘学习，不构成任何投资建议。市场有风险，投资需谨慎。</div>
+    </div>
+    <div id="post-content">
+      <div class="loading"><div class="spinner"></div><div>加载复盘数据中...</div></div>
+    </div>
+  </div>
+
+  <div class="footer">🦞 AAna · A股每日看盘 · 数据来源：公开市场信息 · 仅供参考，不构成投资建议</div>
 </div>
 
 <script>
-
 (function(){
-var _p='https://raw.githubusercontent.com/';
-window.__src=_p+'wssaidong/AAna/main';
-})();
-
-var RAW = window.__src;
-
-// === Constants ===
-var DAY_NAME_MAP={0:'周日',1:'周一',2:'周二',3:'周三',4:'周四',5:'周五',6:'周六'};
-var CATEGORIES=["AI算力/芯片","人形机器人","半导体设备","储能/绿电","AI应用"];
-var CAT_COLORS={"AI算力/芯片":"#ef4444","人形机器人":"#f59e0b","半导体设备":"#3b82f6","储能/绿电":"#10b981","AI应用":"#8b5cf6"};
-var DIM_COLORS={"大盘判断":"#ef4444","热点命中":"#f59e0b","个股表现":"#3b82f6","操作建议":"#8b5cf6","风险提示":"#10b981","黑马挖掘":"#f97316"};
-var DIM_NORM={"大盘判断准确率":"大盘判断","大盘方向判断":"大盘判断","热点主线命中率":"热点命中","热点方向命中率":"热点命中","推荐个股表现":"个股表现","Top10个股命中率":"个股表现","推荐个股平均涨幅":"个股表现","操作建议有效性":"操作建议","风险提示有效性":"风险提示","风险提示准确性":"风险提示","风险控制":"风险提示","风控提示":"风险提示","黑马挖掘能力":"黑马挖掘"};
-var RETRY_DELAY_BASE=600;
-var LOAD_INTERVAL=180;
-var MAX_Y=10;
-
-// === Date Generation ===
-var DATES=[];
-for(var di=6;di>=0;di--){
+  var _p='https://raw.githubusercontent.com/wssaidong/AAna/main';
+  window.__src=_p;
   var d=new Date();
-  d.setDate(d.getDate()-di);
-  DATES.push(d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'));
-}
-var DATE_DAY_MAP={};
-var DAY_NAMES=DATES.map(function(dt){
-  var m=dt.match(/(\d{4})-(\d{2})-(\d{2})/);
-  var dayName=DAY_NAME_MAP[new Date(m[1],m[2]-1,m[3]).getDay()];
-  DATE_DAY_MAP[dt]=dayName;
-  return dayName;
-});
-
-// === State ===
-var WEEKLY_DATA={};
-var SELECTED_DAY=DATES[DATES.length-1];
-var ALL_LOADED=0;
-var TOTAL_NEEDED=14;
-
-// === Utilities ===
-function reSafe(s){return s.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");}
-function parseTableRow(row){return row.split("|").slice(1,-1).map(function(c){return c.trim();});}
-function stripBold(val){return val?val.replace(/\*\*/g,""):val;}
-function extractEmoji(str){
-  if(!str)return{emoji:"📊",name:str||""};
-  var m=str.match(/^[💻📊🔧🤖🧠🔋]+/);
-  return{emoji:m?m[0]:"📊",name:str.replace(/^[💻📊🔧🤖🧠🔋]+\s*/,"").trim()};
-}
-function parseChangeStr(str){
-  if(!str)return{raw:str,dir:"neutral",val:0};
-  var m=str.match(/([🟢🔴⚪])\s*([+-]?[\d.]+)%/);
-  if(!m)return{raw:str,dir:"neutral",val:0};
-  return{raw:str,dir:parseFloat(m[2])>=0?"up":"down",val:parseFloat(m[2])};
-}
-function stockCellClass(ch){return ch.dir==="up"?"up":ch.dir==="down"?"down":"";}
-
-function switchTab(tab){
-  document.querySelectorAll(".tab").forEach(function(t){t.classList.remove("active");});
-  document.querySelectorAll(".tab-content").forEach(function(c){c.classList.remove("active");});
-  document.getElementById("tab-btn-"+tab).classList.add("active");
-  document.getElementById("tab-"+tab).classList.add("active");
-}
-
-function extractEmoji(str){
-  if(!str)return{emoji:"📊",name:str||""};
-  var m=str.match(/^[💻📊🔧🤖🧠🔋]+/);
-  return{emoji:m?m[0]:"📊",name:str.replace(/^[💻📊🔧🤖🧠🔋]+\s*/,"").trim()};
-}
+  var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,'0'),day=String(d.getDate()).padStart(2,'0');
+  window.__today=y+'-'+m+'-'+day;
+  window.__srcBase='https://raw.githubusercontent.com/wssaidong/AAna/main/reports/'+window.__today;
+})();
+var BASE=window.__src;
+var TODAY=window.__today;
+var dbg=document.getElementById('dbg')||{textContent:''};
 
 function parseChangeStr(str){
-  if(!str)return{raw:str,dir:"neutral",val:0};
-  var m=str.match(/([🟢🔴⚪])\s*([+-]?[\d.]+)%/);
-  if(!m)return{raw:str,dir:"neutral",val:0};
-  return{raw:str,dir:parseFloat(m[2])>=0?"up":"down",val:parseFloat(m[2])};
+  if(!str)return{raw:str||'',dir:'flat',val:0};
+  var m=str&&str.match(/([🟢🔴⚪])\s*([+-]?[\d.]+)%/);
+  if(!m){var m2=str&&str.match(/([+-]?[\d.]+)%/);if(m2)return{raw:str,dir:parseFloat(m2[1])>=0?'up':'down',val:Math.abs(parseFloat(m2[1]))};return{raw:str||'',dir:'flat',val:0};}
+  return{raw:str,dir:m[1]==='🔴'?'up':m[1]==='🟢'?'down':'flat',val:parseFloat(m[2])};
 }
 
-function reSafe(s){return s.replace(/[.*+?^${}()|[\]\\\/]/g,"\\$&");}
+function changeClass(dir){
+  if(dir==='up')return'txt-up';
+  if(dir==='down')return'txt-down';
+  return'txt-flat';
+}
 
-function parseReport(md,date){
-  var d={date:date,top10:[],categories:{}};
-  var top10m=md.match(/### 🏆 重点关注 Top 10\n\n\|[\s\S]*?\n([\s\S]*?)(?=### |## |$)/);
-  if(top10m){
-    top10m[1].split("\n").filter(function(l){return l.startsWith("|")&&/^\| \d/.test(l);}).forEach(function(row){
-      var cells=parseTableRow(row);
-      if(cells.length>=9){
-        var ex=extractEmoji(cells[1]);
-        d.top10.push({rank:cells[0],emoji:ex.emoji,name:ex.name,code:cells[2],price:cells[3],change:cells[4],tech:cells[5],score:stripBold(cells[6]),rating:cells[7],risk:cells[8]});
+function changeTag(dir){
+  if(dir==='up')return'<span class="stock-tag tag-up">🔥</span>';
+  if(dir==='down')return'<span class="stock-tag tag-down">❄️</span>';
+  return'<span class="stock-tag tag-flat">➖</span>';
+}
+
+function sectorColor(idx){
+  var cols=['#ef4444','#f59e0b','#3b82f6','#10b981','#8b5cf6','#f97316','#06b6d4','#84cc16'];
+  return cols[idx%cols.length];
+}
+
+function moodEmoji(mood){
+  if(!mood)return'❓';
+  if(mood.includes('乐观')||mood.includes('亢奋')||mood.includes('火热'))return'🔥';
+  if(mood.includes('分歧')||mood.includes('震荡'))return'⚡';
+  if(mood.includes('悲观')||mood.includes('冰点'))return'❄️';
+  return'🌙';
+}
+
+function fmtChange(val,dir){
+  var sign=dir==='up'?'+':dir==='down'?'-':'';
+  return sign+val.toFixed(2)+'%';
+}
+
+function switchPhase(phase){
+  document.querySelectorAll('.phase-btn').forEach(function(b){b.classList.remove('active');});
+  document.getElementById('phase-btn-'+phase).classList.add('active');
+  document.querySelectorAll('.phase-content').forEach(function(c){c.classList.remove('active');});
+  document.getElementById('phase-'+phase).classList.add('active');
+}
+
+// Load data
+(function loadAll(){
+  var todo=0;
+  var done=0;
+  function onDone(){done++;if(done>=todo){document.getElementById('loading-screen').style.display='none';}}
+
+  // Try most recent date, fallback to today's hardcoded sample
+  var dates=[TODAY,'2026-05-15','2026-05-14','2026-05-13'];
+  var usedDate='';
+  var loaded={};
+
+  function tryDate(dates,idx){
+    if(idx>=dates.length){
+      renderAll({});
+      return;
+    }
+    var dt=dates[idx];
+    usedDate=dt;
+    document.getElementById('date-display').textContent=dt+' · 交易日';
+    var base='https://raw.githubusercontent.com/wssaidong/AAna/main/reports/'+dt;
+    var promises=[];
+    var names=['盘前','竞价','盘中','复盘'];
+
+    // Load premarket
+    (function(){
+      var p=fetch(base+'/盘前/'+dt+'_0830_早盘简报.md').then(function(r){return r.ok?r.text():null;}).catch(function(){return null;});
+      promises.push(p.then(function(md){
+        if(md)loaded.premarket=parsePremarket(md,dt);
+        else loaded.premarket=null;
+      }));
+    })();
+
+    // Load auction
+    (function(){
+      var p=fetch(base+'/竞价/'+dt+'_0928_竞价推送.md').then(function(r){return r.ok?r.text():null;}).catch(function(){return null;});
+      promises.push(p.then(function(md){
+        if(md)loaded.auction=parseAuction(md,dt);
+        else loaded.auction=null;
+      }));
+    })();
+
+    // Load intraday midday
+    (function(){
+      var p=fetch(base+'/盘中/'+dt+'_1128_午盘总结.md').then(function(r){return r.ok?r.text():null;}).catch(function(){return null;});
+      promises.push(p.then(function(md){
+        if(md)loaded.intraday=parseIntraday(md,dt);
+        else loaded.intraday=null;
+      }));
+    })();
+
+    // Load intraday close
+    (function(){
+      var p=fetch(base+'/盘中/'+dt+'_1445_尾盘分析.md').then(function(r){return r.ok?r.text():null;}).catch(function(){return null;});
+      promises.push(p.then(function(md){
+        if(md)loaded.close=parseClose(md,dt);
+        else loaded.close=null;
+      }));
+    })();
+
+    Promise.all(promises).then(function(){
+      // Check if any data loaded
+      if(loaded.premarket||loaded.auction||loaded.intraday||loaded.close){
+        renderAll(loaded,usedDate);
+      }else{
+        tryDate(dates,idx+1);
       }
     });
   }
-  CATEGORIES.forEach(function(catName){
-    var escaped=reSafe(catName);
-    var reSource="### "+escaped+"\n[\s\S]*?\n\n\|[^\n]+\|[\s\S]*?\n(([\s\S]*?)(?=### |## |$))";
-    var catM;
-    try{catM=md.match(new RegExp(reSource));}catch(e){catM=null;}
-    if(catM&&catM[1]){
-      var stocks=[];
-      catM[1].split("\n").filter(function(l){return l.startsWith("|")&&/^\| [^|]/.test(l);}).forEach(function(row){
-        var cells=parseTableRow(row);
-        if(cells.length>=7){
-          var ex=extractEmoji(cells[0]);
-          stocks.push({emoji:ex.emoji,name:ex.name,code:cells[1],price:cells[2],change:cells[3],tech:cells[4],score:stripBold(cells[5]),rating:cells[6]});
+
+  tryDate(dates,0);
+})();
+
+function parsePremarket(md,date){
+  var d={date:date,indices:[],sectors:[],mood:'',op:'',stocks:[],timeline:[]};
+  // Indices
+  var idxRe=/\| (.+?) \| [.¥¥]?([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
+  var m;
+  while((m=idxRe.exec(md))!==null){
+    var ch=parseChangeStr(m[3]+' '+m[4]+'%');
+    d.indices.push({name:m[1],val:m[2],dir:ch.dir,val2:ch.val});
+  }
+  // Mood
+  var moodM=md.match(/\*\*市场情绪:\*\*\s*([^\n]+)/);
+  if(moodM)d.mood=moodM[1].trim();
+  var opM=md.match(/\*\*操作建议:\*\*\s*([^\n]+)/);
+  if(opM)d.op=opM[1].trim();
+  // Sectors
+  var sectorRe=/\| (.+?) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \| (.+?) \*/g;
+  var rank=1;
+  while((m=sectorRe.exec(md))!==null){
+    var ch=parseChangeStr(m[2]+' '+m[3]+'%');
+    d.sectors.push({name:m[1],dir:ch.dir,val:ch.val,logic:m[4].trim()});
+    rank++;
+  }
+  // If sectors empty, try table rows
+  if(d.sectors.length===0){
+    var tblM=md.match(/\| 板块.*\n\|[:\-|\s]+\n((?:\|[^\n]+\n)+)/);
+    if(tblM){
+      tblM[1].split('\n').filter(function(l){return l.startsWith('|')&&!/^\|[-\s:]/.test(l);}).forEach(function(row){
+        var cells=row.split('|').filter(function(c){return c.trim();});
+        if(cells.length>=4){
+          var nm=cells[1].trim().replace(/[🥇🥈🥉]/g,'').trim();
+          var ch=parseChangeStr(cells[2].trim());
+          var logic=cells[3].trim();
+          d.sectors.push({name:nm,dir:ch.dir,val:ch.val,logic:logic});
         }
       });
-      if(stocks.length)d.categories[catName]=stocks;
     }
-  });
-  return d;
-}
-
-function parseReview(md,date){
-  var d={date:date,overallScore:null,dimScores:{},problems:[],suggestions:[]};
-  var scorePatterns=[
-    {re:/\*\*综合评分\*\*\s*\|\s*\*\*([\d.]+)(?:\/10)?\*\*/,parse:function(v){var n=parseFloat(v);return n>10?Math.round(n*10/100):n;}},
-    {re:/\*\*综合评分[:：]\s*([\d.]+)\/10\*\*/,parse:parseFloat},
-    {re:/综合评分\*\*\s*\|\s*\*\*([\d.]+)\s*\|\s*10/,parse:parseFloat}
+  }
+  // Stocks
+  var stockRe=/([💻📊🔧🤖🧠🔋]+)(.+?)\s*\((\d+)\)\s*([🟢🔴⚪])\s*([+-]?[\d.]+)%/g;
+  while((m=stockRe.exec(md))!==null){
+    var ch=parseChangeStr(m[4]+' '+m[5]+'%');
+    d.stocks.push({emoji:m[1],name:m[2],code:m[3],dir:ch.dir,val:ch.val});
+  }
+  // Timeline
+  d.timeline=[
+    {time:'09:15',label:'集合竞价开始',done:true},
+    {time:'09:25',label:'竞价确认',done:false},
+    {time:'09:28',label:'🎯 竞价推送',done:false},
+    {time:'09:30',label:'开盘交易',done:false},
+    {time:'11:28',label:'午盘总结',done:false},
+    {time:'14:40',label:'尾盘分析',done:false},
+    {time:'15:00',label:'收盘',done:false},
   ];
-  for(var i=0;i<scorePatterns.length;i++){
-    var m=md.match(scorePatterns[i].re);
-    if(m){d.overallScore=scorePatterns[i].parse(m[1]);break;}
-  }
-  var dimKeys=["大盘判断准确率","大盘判断","大盘方向判断","热点方向命中率","热点主线命中率","推荐个股表现","Top10个股命中率","操作建议有效性","风险提示有效性","风险提示准确性","风险控制","风控提示","黑马挖掘能力","推荐个股平均涨幅"];
-  dimKeys.forEach(function(k){
-    var re=new RegExp("\\|\\s*"+reSafe(k)+"\\s*\\|\\s*(\\d+)[/\\s]");
-    var m=md.match(re);
-    if(m){var nk=DIM_NORM[k]||k;if(!d.dimScores[nk])d.dimScores[nk]=parseInt(m[1]);}
-  });
-  var probM=md.match(/##\s*(?:四、|五、)?核心问题分析([\s\S]*?)(?=##\s*(?:五、|六、)|$)/);
-  if(probM){
-    probM[1].split(/###\s*(?:🔴\s*)?问题\d+/).filter(function(b){return b.trim();}).forEach(function(block){
-      var tm=block.match(/\*\*现象[:：]\*\*\s*(.*?)(\n|$)/);
-      if(!tm)tm=block.match(/-\s*\*\*现象[:：]\*\*\s*(.*?)(\n|$)/);
-      if(tm)d.problems.push(tm[1].trim().slice(0,120));
-    });
-  }
-  var suggM=md.match(/##\s*(?:五、|六、)?优化建议([\s\S]*?)(?=##\s*(?:六、|七、)|$)/);
-  if(suggM){
-    suggM[1].split(/###\s*建议\d+/).filter(function(b){return b.trim();}).forEach(function(block){
-      var tm=block.match(/\*\*问题[:：]\*\*\s*(.*?)(\n|$)/);
-      if(tm)d.suggestions.push(tm[1].trim().slice(0,120));
-    });
-  }
   return d;
 }
 
-function onDataLoaded(){
-  ALL_LOADED++;
-  if(ALL_LOADED<TOTAL_NEEDED)return;
-  renderOverview();
-  renderDayTabs();
-  renderDayReport(SELECTED_DAY);
-  renderReview();
-  document.getElementById("overview-loading").classList.add("hidden");
-  document.getElementById("overview-content").classList.remove("hidden");
-  document.getElementById("daily-loading").classList.add("hidden");
-  document.getElementById("review-loading").classList.add("hidden");
-}
-
-function renderOverview(){
-  var stockMap={};
-  DATES.forEach(function(dt){
-    var rd=WEEKLY_DATA[dt];
-    if(!rd||!rd.report)return;
-    rd.report.top10.forEach(function(s){
-      if(!stockMap[s.code]){stockMap[s.code]={code:s.code,name:s.name,emoji:s.emoji,days:[],daysSet:new Set(),ratings:[],changes:{},risk:s.risk};}
-      stockMap[s.code].days.push(dt);
-      stockMap[s.code].daysSet.add(dt);
-      stockMap[s.code].ratings.push(s.rating);
-      if(s.change)stockMap[s.code].changes[dt]=s.change;
-    });
-  });
-  var stocks=Object.values(stockMap).sort(function(a,b){return b.days.length-a.days.length;});
-  var freqStocks=stocks.filter(function(s){return s.days.length>=2;});
-  var top15=stocks.slice(0,15);
-  var totalReports=Object.values(WEEKLY_DATA).filter(function(d){return d.report;}).length;
-  var totalReviews=Object.values(WEEKLY_DATA).filter(function(d){return d.review;}).length;
-  var avgScore=freqStocks.length?Math.round(freqStocks.reduce(function(s,v){return s+parseFloat(v.ratings[v.ratings.length-1]||0);},0)/freqStocks.length):0;
-  document.getElementById("stats-row").innerHTML=[
-    {val:totalReports,lbl:"选股报告",sub:"最近7天"},
-    {val:totalReviews,lbl:"复盘评分",sub:"最近7天"},
-    {val:freqStocks.length,lbl:"持续关注股",sub:"出现≥2天"},
-    {val:avgScore||"—",lbl:"平均综合分",sub:freqStocks[0]?freqStocks[0].name:""},
-  ].map(function(s){return'<div class="stat-card"><div class="val">'+s.val+'</div><div class="lbl">'+s.lbl+'</div>'+(s.sub?'<div class="sub">'+s.sub+'</div>':'')+'</div>';}).join('');
-
-  document.getElementById("heatmap-col-labels").innerHTML=DATES.map(function(dt,i){return'<div class="heatmap-col-label">'+DAY_NAMES[i]+'<br><span style="font-size:0.6rem">'+dt.slice(5)+'</span></div>';}).join('');
-
-  var hHTML="";
-  top15.forEach(function(stock){
-    var cellsHTML=DATES.map(function(dt){
-      var has=stock.daysSet.has(dt);
-      var ch=parseChangeStr(stock.changes[dt]);
-      var cls="none";
-      if(has){if(ch.dir==="up")cls=ch.val>=3?"up-hot":ch.val>=1?"up-mid":"up-light";else if(ch.dir==="down")cls=ch.val<=-1?"down-hot":ch.val<=-0.5?"down-mid":"down-light";else cls="up-light";}
-      var label=has?(stock.changes[dt]?stock.changes[dt].replace(/[🟢🔴⚪]/g,"").replace("%",""):"●"):"";
-      return'<div class="heatmap-cell '+cls+'" title="'+(stock.name||"")+' '+(stock.changes[dt]||"")+'">'+label+'</div>';
-    }).join("");
-    hHTML+='<div class="heatmap-row"><div class="heatmap-label" title="'+stock.name+'">'+stock.emoji+' '+stock.name+'</div><div class="heatmap-cells">'+cellsHTML+'</div></div>';
-  });
-  document.getElementById("heatmap-grid").innerHTML=hHTML;
-
-  document.getElementById("freq-tbody").innerHTML=freqStocks.map(function(s,i){
-    var lastR=s.ratings[s.ratings.length-1]||"—";
-    var dotsHTML=s.days.map(function(dt){
-      var ch=parseChangeStr(s.changes[dt]);
-      var col=ch.dir==="up"?"var(--red)":ch.dir==="down"?"var(--green)":"var(--text3)";
-      return'<span class="freq-dot" style="background:'+col+'" title="'+dt+' '+(ch.raw||"")+'"></span>';
-    }).join("");
-    return'<tr><td>'+(i+1)+'</td><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+dotsHTML+'</td><td><span class="rating-stars">'+lastR+'</span></td><td>'+(s.risk||"—")+'</td></tr>';
-  }).join("");
-
-  var catCount={};
-  DATES.forEach(function(dt){
-    var rd=WEEKLY_DATA[dt];
-    if(!rd||!rd.report)return;
-    Object.keys(rd.report.categories).forEach(function(cat){
-      if(!catCount[cat])catCount[cat]={days:0,totalStocks:0};
-      catCount[cat].days++;catCount[cat].totalStocks+=rd.report.categories[cat].length;
-    });
-  });
-  document.getElementById("cat-bars").innerHTML=Object.entries(catCount).sort(function(a,b){return b[1].days-a[1].days;}).map(function(item){
-    var cat=item[0],data=item[1];
-    var pct=Math.round((data.days/7)*100);
-    var col=CAT_COLORS[cat]||"var(--accent)";
-    return'<div class="score-row"><div class="lbl" style="width:100px">'+cat+'</div><div class="bar-wrap"><div class="bar" style="width:'+pct+'%;background:'+col+'"></div></div><div class="val" style="color:'+col+'">'+data.days+'/7 · '+data.totalStocks+'只</div></div>';
-  }).join("");
-
-  document.getElementById("day-summaries").innerHTML=DATES.slice().reverse().map(function(dt){
-    var rd=WEEKLY_DATA[dt];
-    if(!rd||!rd.report)return"";
-    var top3=rd.report.top10.slice(0,3).map(function(s){return s.emoji+" "+s.name;}).join(" · ");
-    var score=rd.review?rd.review.overallScore:"—";
-    return'<div class="review-block"><div class="rb-header"><div class="rb-title">'+dt+' ('+DATE_DAY_MAP[dt]+')</div><div class="rb-score">'+score+'/10'+(rd.review&&rd.review.overallScore?'':' <span style="font-size:0.7rem;color:var(--muted)">暂无评分</span>')+'</div></div><div class="rb-meta"><strong>Top：</strong>'+top3+'</div></div>';
-  }).join("");
-}
-
-function renderDayTabs(){
-  document.getElementById("day-tabs").innerHTML=DATES.slice().reverse().map(function(dt){
-    return'<button class="day-tab'+(dt===SELECTED_DAY?' active':'')+'" onclick="selectDay(\''+dt+'\')"><span class="day-name">'+dt.slice(5)+'</span>'+DAY_NAMES[DATES.indexOf(dt)]+'</button>';
-  }).join("");
-}
-
-function selectDay(dt){
-  SELECTED_DAY=dt;
-  document.querySelectorAll(".day-tab").forEach(function(t){t.classList.remove("active");});
-  document.querySelector(".day-tab[onclick*='"+dt+"']").classList.add("active");
-  renderDayReport(dt);
-}
-
-function renderDayReport(dt){
-  var rd=WEEKLY_DATA[dt];
-  if(!rd||!rd.report){document.getElementById("daily-content").innerHTML="<div class='loading'>该日期暂无数据</div>";return;}
-  var r=rd.report;
-  var cats=Object.keys(r.categories||{});
-  var html='<div class="day-report-header"><div><div class="date">'+dt+' 选股报告</div><div class="meta">Stock Weekly · 仅供参考不构成投资建议</div></div>';
-  if(rd.review&&rd.review.overallScore)html+='<span class="score-badge" style="font-size:0.85rem;padding:0.3rem 0.8rem">复盘 '+rd.review.overallScore+'/10</span>';
-  html+='</div>';
-  html+='<div class="section-title">🏆 Top 10</div><div class="stock-table-wrap"><table class="stock-table"><thead><tr><th>#</th><th>股票</th><th>代码</th><th>价格</th><th>涨跌幅</th><th>技</th><th>综</th><th>评级</th><th>风险</th></tr></thead><tbody>';
-  r.top10.forEach(function(s){
-    var ch=parseChangeStr(s.change);
-    html+='<tr><td>'+s.rank+'</td><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+s.price+'</td><td class="'+stockCellClass(ch)+'">'+(ch.raw||"")+'</td><td>'+s.tech+'</td><td><span class="score-badge">'+s.score+'</span></td><td><span class="rating-stars">'+s.rating+'</span></td><td>'+s.risk+'</td></tr>';
-  });
-  html+='</tbody></table></div>';
-  cats.forEach(function(cat){
-    var cs=r.categories[cat];if(!cs||!cs.length)return;
-    html+='<div class="section-title" style="margin-top:1.5rem">'+cat+'</div><div class="stock-table-wrap"><table class="stock-table"><thead><tr><th>股票</th><th>代码</th><th>价格</th><th>涨跌幅</th><th>技</th><th>综</th><th>评级</th></tr></thead><tbody>';
-    cs.forEach(function(s){
-      var ch=parseChangeStr(s.change);
-      html+='<tr><td><span>'+s.emoji+'</span> <span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td>'+s.price+'</td><td class="'+stockCellClass(ch)+'">'+(ch.raw||"")+'</td><td>'+s.tech+'</td><td><span class="score-badge">'+s.score+'</span></td><td><span class="rating-stars">'+s.rating+'</span></td></tr>';
-    });
-    html+='</tbody></table></div>';
-  });
-  if(rd.review){
-    var rv=rd.review;
-    html+='<div class="section-title" style="margin-top:1.5rem">🔍 复盘 '+dt+'</div><div class="review-block"><div class="rb-header"><div class="rb-title">综合评分</div><div class="rb-score">'+(rv.overallScore||"—")+'/10</div></div>';
-    if(rv.dimScores&&Object.keys(rv.dimScores).length){
-      html+='<div style="margin-top:0.8rem">';
-      Object.entries(rv.dimScores).forEach(function(kv){
-        var color=DIM_COLORS[kv[0]]||"var(--accent)";
-        html+='<div class="score-row"><div class="lbl">'+kv[0]+'</div><div class="bar-wrap"><div class="bar" style="width:'+Math.round((kv[1]/10)*100)+'%;background:'+color+'"></div></div><div class="val" style="color:'+color+'">'+kv[1]+'/10</div></div>';
-      });
-      html+='</div>';
+function parseAuction(md,date){
+  var d={date:date,stocks:[],ops:[],timeline:[]};
+  // Stocks table
+  var re=/\| (.+?) \| (\d{6}) \| (.+?) \| [.¥]?([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \| (.+?) \*/g;
+  var m;
+  while((m=re.exec(md))!==null){
+    var ch=parseChangeStr(m[5]+' '+m[6]+'%');
+    d.stocks.push({name:m[1],code:m[2],sector:m[3],price:m[4],dir:ch.dir,val:ch.val,suggest:m[7].trim()});
+  }
+  // If empty, try simple parsing
+  if(d.stocks.length===0){
+    var stockRe=/([💻📊🔧🤖🧠🔋]+)?(.+?)\s*\((\d+)\).*?([🟢🔴⚪])\s*([+-]?[\d.]+)%/g;
+    while((m=stockRe.exec(md))!==null){
+      var ch=parseChangeStr(m[4]+' '+m[5]+'%');
+      d.stocks.push({name:m[2],code:m[3],sector:'',price:'',dir:ch.dir,val:ch.val,suggest:'✅ 关注'});
     }
-    html+='</div>';
   }
-  document.getElementById("daily-content").innerHTML=html;
-  document.getElementById("daily-content").classList.remove("hidden");
+  // Ops
+  var opRe=/([💻📊🔧🤖🧠🔋]+)?(.+?)\((\d+)\)\s*([+-][\d.]+)%.*?止损:\s*([-\d%]+)/g;
+  while((m=opRe.exec(md))!==null){
+    var ch=parseChangeStr(m[4]);
+    d.ops.push({name:m[2],code:m[3],dir:ch.dir,val:ch.val,suggest:m[4]+'%',stop:m[5]});
+  }
+  d.timeline=[
+    {time:'09:28',label:'✅ 竞价确认',done:true},
+    {time:'09:30',label:'🔴 开盘',done:false},
+    {time:'11:28',label:'📋 午盘总结',done:false},
+    {time:'14:40',label:'📊 尾盘分析',done:false},
+    {time:'15:00',label:'🔵 收盘',done:false},
+  ];
+  return d;
 }
 
-function renderTrendChart(containerId,seriesList,maxY){
-  var el=document.getElementById(containerId);if(!el||!seriesList.length)return;
-  var W=600,H=260,PL=48,PR=20,PT=20,PB=36;
-  var cw=W-PL-PR,ch=H-PT-PB;
-  var labels=seriesList[0].data.map(function(d){return d.label;});
-  var n=labels.length;if(n<2){el.innerHTML='<div style="text-align:center;color:var(--text3);padding:2rem">数据不足，至少需要2天</div>';return;}
-  var stepX=cw/(n-1);
-  var svg='<svg class="trend-svg" viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
-  for(var yi=0;yi<=maxY;yi+=2){
-    var y=PT+ch-(yi/maxY)*ch;
-    svg+='<line x1="'+PL+'" y1="'+y+'" x2="'+(W-PR)+'" y2="'+y+'" class="trend-grid-line"/>';
-    svg+='<text x="'+(PL-8)+'" y="'+(y+3)+'" class="trend-axis-label" text-anchor="end">'+yi+'</text>';
+function parseIntraday(md,date){
+  var d={date:date,indices:[],mood:'',sectors:[],top5:[],bot5:[],ops:[],timeline:[]};
+  var idxRe=/\| (.+?) \| [.¥]?([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
+  var m;
+  while((m=idxRe.exec(md))!==null){
+    var ch=parseChangeStr(m[3]+' '+m[4]+'%');
+    d.indices.push({name:m[1],val:m[2],dir:ch.dir,val2:ch.val});
   }
-  labels.forEach(function(lbl,i){
-    var x=PL+i*stepX;
-    svg+='<text x="'+x+'" y="'+(H-PB+20)+'" class="trend-axis-label" text-anchor="middle">'+lbl+'</text>';
-  });
-  seriesList.forEach(function(series){
-    var pts=series.data.map(function(d,i){return{x:PL+i*stepX,y:PT+ch-(d.value/maxY)*ch};});
-    var areaPath='M'+pts[0].x+','+pts[0].y;
-    pts.forEach(function(p,i){if(i>0)areaPath+=' L'+p.x+','+p.y;});
-    areaPath+=' L'+pts[pts.length-1].x+','+(PT+ch)+' L'+pts[0].x+','+(PT+ch)+' Z';
-    svg+='<path d="'+areaPath+'" fill="'+series.color+'" class="trend-area"/>';
-    var linePath=pts.map(function(p,i){return(i===0?'M':'L')+p.x+','+p.y;}).join(' ');
-    svg+='<path d="'+linePath+'" class="trend-line" stroke="'+series.color+'"/>';
-    pts.forEach(function(p,i){
-      svg+='<circle cx="'+p.x+'" cy="'+p.y+'" r="4" fill="'+series.color+'" class="trend-dot" data-tip="'+series.name+' '+labels[i]+': '+series.data[i].value+'"/>';
-    });
-  });
-  svg+='</svg>';
-  var legend='<div class="trend-legend">'+seriesList.map(function(s){
-    return'<div class="trend-legend-item"><span class="trend-legend-dot" style="background:'+s.color+'"></span>'+s.name+'</div>';
-  }).join('')+'</div>';
-  el.innerHTML=svg+legend+'<div class="trend-tooltip" id="tip-'+containerId+'"></div>';
-  el.querySelectorAll('.trend-dot').forEach(function(dot){
-    dot.addEventListener('mouseenter',function(e){
-      var tip=document.getElementById('tip-'+containerId);
-      var rect=el.getBoundingClientRect();
-      var svgEl=el.querySelector('.trend-svg');
-      var svgRect=svgEl.getBoundingClientRect();
-      var scaleX=svgRect.width/W;
-      var cx=parseFloat(dot.getAttribute('cx'))*scaleX+svgRect.left-rect.left;
-      var cy=parseFloat(dot.getAttribute('cy'))*(svgRect.height/H)+svgRect.top-rect.top;
-      tip.textContent=dot.getAttribute('data-tip');
-      tip.style.left=cx+'px';tip.style.top=cy+'px';tip.style.opacity='1';
-    });
-    dot.addEventListener('mouseleave',function(){
-      document.getElementById('tip-'+containerId).style.opacity='0';
-    });
-  });
+  var moodM=md.match(/\*\*早盘情绪:\*\*\s*([^\n]+)/);
+  if(moodM)d.mood=moodM[1].trim();
+  var sectorRe=/\| (.+?) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \| (.+?) \*/g;
+  while((m=sectorRe.exec(md))!==null){
+    var ch=parseChangeStr(m[2]+' '+m[3]+'%');
+    d.sectors.push({name:m[1],dir:ch.dir,val:ch.val,logic:m[4].trim()});
+  }
+  // Top 5
+  var topM=md.match(/\*\*涨幅榜 Top 5\*\*([\s\S]*?)(?=\*\*跌幅榜|$)/);
+  if(topM){
+    var rowRe=/([💻📊🔧🤖🧠🔋]+)?(.+?)\s*\((\d+)\).*?(人形机器人|AI应用|半导体设备|AI算力|储能|.+?)\s*([🟢🔴⚪])\s*([+-]?[\d.]+)%/g;
+    while((m=rowRe.exec(topM[1]))!==null){
+      var ch=parseChangeStr(m[5]+' '+m[6]+'%');
+      d.top5.push({emoji:m[1]||'📊',name:m[2],code:m[3],sector:m[4],dir:ch.dir,val:ch.val});
+    }
+  }
+  // Bot 5
+  var botM=md.match(/\*\*跌幅榜 Top 5\*\*([\s\S]*?)(?=下午操作|$)/);
+  if(botM){
+    var rowRe=/([💻📊🔧🤖🧠🔋]+)?(.+?)\s*\((\d+)\).*?(人形机器人|AI应用|半导体设备|AI算力|储能|.+?)\s*([🟢🔴⚪])\s*([+-]?[\d.]+)%/g;
+    while((m=rowRe.exec(botM[1]))!==null){
+      var ch=parseChangeStr(m[5]+' '+m[6]+'%');
+      d.bot5.push({emoji:m[1]||'📊',name:m[2],code:m[3],sector:m[4],dir:ch.dir,val:ch.val});
+    }
+  }
+  var opsM=md.match(/\*\*注意事项:\*\*\s*([\s\S]*?)(?=\*\*下午时间线|$)/);
+  if(opsM)d.opsText=opsM[1].trim();
+  d.timeline=[
+    {time:'13:00',label:'下午开盘',done:false},
+    {time:'14:40',label:'📊 尾盘分析',done:false},
+    {time:'15:00',label:'🔵 收盘',done:false},
+    {time:'21:30',label:'🌙 复盘开始',done:false},
+  ];
+  return d;
 }
 
-function renderReview(){
-  var allProblems={};
-  var allSuggestions={};
-  var dimAll={大盘判断:[],热点命中:[],个股表现:[],操作建议:[],风险提示:[]};
-  var dayScores=[];
-  DATES.forEach(function(dt){
-    var rd=WEEKLY_DATA[dt];
-    if(!rd||!rd.review)return;
-    var rv=rd.review;
-    if(rv.overallScore)dayScores.push({date:dt,score:rv.overallScore});
-    if(rv.problems)rv.problems.forEach(function(p){if(!allProblems[p])allProblems[p]=0;allProblems[p]++;});
-    if(rv.suggestions)rv.suggestions.forEach(function(s){if(!allSuggestions[s])allSuggestions[s]=0;allSuggestions[s]++;});
-    Object.keys(dimAll).forEach(function(k){
-      if(rv.dimScores&&rv.dimScores[k]!=null)dimAll[k].push({date:dt,val:rv.dimScores[k]});
-    });
-  });
-
-  document.getElementById("day-score-cards").innerHTML=dayScores.map(function(d){
-    return'<div class="day-score-card"><div class="date">'+
-    d.date.slice(5)+'</div><div class="score">'+d.score+'</div><div class="max">/10</div></div>';
-  }).join('');
-  if(dayScores.length){
-    var avgOverall=dayScores.reduce(function(s,v){return s+v.score;},0)/dayScores.length;
-    document.getElementById('day-score-cards').innerHTML+='<div class="day-score-card" style="border-color:var(--accent)"><div class="date">平均</div><div class="score">'+avgOverall.toFixed(1)+'</div><div class="max">/10</div></div>';
+function parseClose(md,date){
+  var d={date:date,indices:[],analysis:{},sectors:[],strong:[],weak:[],ops:{},timeline:[]};
+  var idxRe=/\| (.+?) \| [.¥]?([\d.]+) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \|/g;
+  var m;
+  while((m=idxRe.exec(md))!==null){
+    var ch=parseChangeStr(m[3]+' '+m[4]+'%');
+    d.indices.push({name:m[1],val:m[2],dir:ch.dir,val2:ch.val});
   }
-
-  renderTrendChart('overall-trend',[{name:'综合评分',color:'var(--accent)',data:dayScores.map(function(d){return{label:d.date.slice(5),value:d.score};})}],MAX_Y);
-  var dimSeries=[];
-  Object.entries(dimAll).filter(function(kv){return kv[1].length>0;}).forEach(function(kv){
-    dimSeries.push({name:kv[0],color:DIM_COLORS[kv[0]]||'var(--accent)',data:kv[1].map(function(v){return{label:v.date.slice(5),value:v.val};})});
-  });
-  if(dimSeries.length)renderTrendChart('dim-trend',dimSeries,MAX_Y);
-
-  var probList=Object.entries(allProblems).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
-  document.getElementById('common-problems').innerHTML=probList.map(function(item){
-    return'<div class="problem-card"><h4>⚠️ '+item[0]+'</h4><p>出现 '+item[1]+' 次</p></div>';
-  }).join('');
-
-  var suggList=Object.entries(allSuggestions).sort(function(a,b){return b[1]-a[1];}).slice(0,5);
-  document.getElementById('common-suggestions').innerHTML=suggList.map(function(item){
-    return'<div class="suggestion-card"><h4>💡 '+item[0]+'</h4><p>出现 '+item[1]+' 次</p></div>';
-  }).join('');
-
-  document.getElementById('review-content').classList.remove('hidden');
+  var featM=md.match(/\*\*尾盘特征:\*\*\s*([^\n]+)/);
+  if(featM)d.analysis.feature=featM[1].trim();
+  var judgeM=md.match(/\*\*分析判断:\*\*\s*([^\n]+)/);
+  if(judgeM)d.analysis.judge=judgeM[1].trim();
+  var sectorRe=/\| (.+?) \| ([🟢🔴⚪])\s*([+-]?[\d.]+)% \| (.+?) \*/g;
+  while((m=sectorRe.exec(md))!==null){
+    var ch=parseChangeStr(m[2]+' '+m[3]+'%');
+    d.sectors.push({name:m[1],dir:ch.dir,val:ch.val,eval_:m[4].trim()});
+  }
+  // Strong stocks
+  var strongM=md.match(/\*\*🚀 强势股[\s\S]*?\*\*([\s\S]*?)(?=\*\*📉|$)/);
+  if(strongM){
+    var rowRe=/([💻📊🔧🤖🧠🔋]+)?(.+?)\s*\((\d+)\).*?([🟢🔴⚪])\s*([+-]?[\d.]+)%.*?([+-][\d.]+%)\s*\|\s*(人形机器人|AI应用|半导体设备|AI算力|储能|.+?)\s*\|\s*([-\d%]+)/g;
+    while((m=rowRe.exec(strongM[1]))!==null){
+      var ch=parseChangeStr(m[4]+' '+m[5]+'%');
+      d.strong.push({emoji:m[1]||'📊',name:m[2],code:m[3],dir:ch.dir,val:ch.val,rel:m[6],sector:m[7],stop:m[8]});
+    }
+  }
+  // Weak stocks
+  var weakM=md.match(/\*\*📉 超跌关注[\s\S]*?\*\*([\s\S]*?)(?=\*\*|$)/);
+  if(weakM){
+    var rowRe=/([💻📊🔧🤖🧠🔋]+)?(.+?)\s*\((\d+)\).*?([🟢🔴⚪])\s*([+-]?[\d.]+)%.*?([+-][\d.]+%)\s*\|\s*(人形机器人|AI应用|半导体设备|AI算力|储能|.+?)\s*\|\s*([-\d%]+)/g;
+    while((m=rowRe.exec(weakM[1]))!==null){
+      var ch=parseChangeStr(m[4]+' '+m[5]+'%');
+      d.weak.push({emoji:m[1]||'📊',name:m[2],code:m[3],dir:ch.dir,val:ch.val,rel:m[6],sector:m[7],stop:m[8]});
+    }
+  }
+  var opsM=md.match(/\*\*谨慎信号:\*\*\s*([^\n]+)/);
+  if(opsM)d.ops.signal=opsM[1].trim();
+  var recapM=md.match(/\*\*今日复盘要点:\*\*([\s\S]*?)(?=\*\*|$)/);
+  if(recapM)d.ops.recap=recapM[1].trim();
+  d.timeline=[
+    {time:'14:40',label:'✅ 尾盘分析完成',done:true},
+    {time:'15:00',label:'🔵 收盘',done:true},
+    {time:'15:00-21:30',label:'盘后数据处理',done:false},
+    {time:'21:30',label:'🌙 复盘开始',done:false},
+  ];
+  return d;
 }
 
-// Load all data - parallel fetch with retry and rate-limit backoff
-(function loadAll(){
-  var dbg=document.getElementById('dbg');
-  var loaded=0;
-  function checkDone(){loaded++;if(loaded>=TOTAL_NEEDED&&dbg)dbg.textContent+=' | 加载完成';}
+function renderAll(loaded,usedDate){
+  document.getElementById('update-time').textContent='更新于 '+usedDate;
+  if(loaded.premarket)renderPremarket(loaded.premarket);
+  if(loaded.auction)renderAuction(loaded.auction);
+  if(loaded.intraday)renderIntraday(loaded.intraday);
+  if(loaded.close)renderClose(loaded.close);
+  renderEmptyPhases(loaded);
+  document.getElementById('loading-screen').style.display='none';
+}
 
-  function fetchWithRetry(url,type,retries){
-    return fetch(url).then(function(r){
-      if(!r.ok&&r.status===429&&retries>0){
-        if(dbg)dbg.textContent+=' | '+type+' 限流重试';
-        return new Promise(function(res){setTimeout(function(){res(fetchWithRetry(url,type,retries-1));},RETRY_DELAY_BASE*(4-retries));});
-      }
-      if(dbg)dbg.textContent+=' | '+type+':'+r.status;
-      return r.ok?r.text():null;
-    }).catch(function(e){
-      if(retries>0){
-        if(dbg)dbg.textContent+=' | '+type+' err重试';
-        return new Promise(function(res){setTimeout(function(){res(fetchWithRetry(url,type,retries-1));},400);});
-      }
-      if(dbg)dbg.textContent+=' | '+type+' err:'+e.message;
-      return null;
-    });
+function renderEmptyPhases(loaded){
+  if(!loaded.premarket){
+    document.getElementById('premarket-idx').innerHTML='<div class="idx-card"><div class="idx-name">暂无数据</div></div>';
   }
+  if(!loaded.auction){
+    document.getElementById('auction-stocks').innerHTML='<tr><td colspan="6" style="text-align:center;color:var(--text3);padding:2rem">竞价数据待生成</td></tr>';
+  }
+  if(!loaded.intraday){
+    document.getElementById('intraday-idx').innerHTML='<div class="idx-card"><div class="idx-name">暂无数据</div></div>';
+  }
+  if(!loaded.close){
+    document.getElementById('close-idx').innerHTML='<div class="idx-card"><div class="idx-name">暂无数据</div></div>';
+  }
+}
 
-  DATES.forEach(function(dt){
-    WEEKLY_DATA[dt]={};
-    if(dbg)dbg.textContent='加载: '+dt;
-    fetchWithRetry(RAW+"/"+dt+"-%E9%80%89%E8%82%A1%E6%8A%A5%E5%91%8A.md",'选股',3).then(function(md){
-      if(md){WEEKLY_DATA[dt].report=parseReport(md,dt);}
-      onDataLoaded();
-      checkDone();
-    });
-    fetchWithRetry(RAW+"/"+dt+"-%E5%A4%8D%E7%9B%98%E8%AF%84%E5%88%86.md",'复盘',3).then(function(md2){
-      if(md2){WEEKLY_DATA[dt].review=parseReview(md2,dt);}
-      onDataLoaded();
-      checkDone();
-    });
-  });
-})();
+function renderPremarket(d){
+  document.getElementById('premarket-date').textContent=d.date+' 盘前简报';
+  // Indices
+  if(d.indices.length){
+    document.getElementById('premarket-idx').innerHTML=d.indices.map(function(idx){
+      return'<div class="idx-card"><div class="idx-name">'+idx.name+'</div><div class="idx-val" style="color:var(--text)">'+idx.val+'</div><div class="idx-change '+changeClass(idx.dir)+'">'+changeTag(idx.dir)+' '+fmtChange(idx.val2,idx.dir)+'</div></div>';
+    }).join('');
+  }
+  // Mood
+  if(d.mood||d.op){
+    document.getElementById('premarket-mood').innerHTML='<div class="mood-icon">'+moodEmoji(d.mood)+'</div><div><div class="mood-label">市场情绪</div><div class="mood-value">'+d.mood+'</div><div class="mood-op">'+d.op+'</div></div>';
+  }
+  // Sectors
+  if(d.sectors.length){
+    document.getElementById('premarket-sectors').innerHTML=d.sectors.map(function(s,i){
+      var rank=i+1;
+      var cls='rank-n';
+      if(rank===1)cls='rank-1';
+      else if(rank===2)cls='rank-2';
+      else if(rank===3)cls='rank-3';
+      return'<tr><td><span class="rank-badge '+cls+'">'+rank+'</span></td><td><span class="sector-rect" style="background:'+sectorColor(i)+'"></span>'+s.name+'</td><td class="'+changeClass(s.dir)+'">'+changeTag(s.dir)+' '+fmtChange(s.val,s.dir)+'</td><td style="color:var(--text2)">'+s.logic+'</td></tr>';
+    }).join('');
+  }
+  // Ops
+  if(d.op){
+    document.getElementById('premarket-ops').innerHTML='<div style="font-size:0.85rem;color:var(--text2);padding:0.25rem 0">'+d.op+'</div>';
+  }
+  // Stocks
+  if(d.stocks.length){
+    document.getElementById('premarket-stocks').innerHTML=d.stocks.map(function(s){
+      return'<div class="rec-item"><div class="rec-stock"><span class="rec-name">'+s.emoji+' '+s.name+'</span><span class="rec-code">'+s.code+'</span></div><div class="rec-sector"><span class="sector-tag">'+s.sector+'</span></div><div class="rec-change '+changeClass(s.dir)+'">'+changeTag(s.dir)+' '+fmtChange(s.val,s.dir)+'</div></div>';
+    }).join('');
+  }
+  // Timeline
+  renderTimeline('premarket-timeline',d.timeline);
+}
 
+function renderAuction(d){
+  document.getElementById('auction-date').textContent=d.date+' 竞价推送';
+  if(d.stocks.length){
+    document.getElementById('auction-stocks').innerHTML=d.stocks.map(function(s){
+      return'<tr><td><span class="stock-name">'+s.name+'</span></td><td class="stock-code">'+s.code+'</td><td><span class="sector-tag">'+s.sector+'</span></td><td>'+s.price+'</td><td class="'+changeClass(s.dir)+'">'+fmtChange(s.val,s.dir)+'</td><td><span class="suggest-tag">'+s.suggest+'</span></td></tr>';
+    }).join('');
+  }
+  if(d.ops.length){
+    document.getElementById('auction-ops').innerHTML='<div class="rec-grid">'+d.ops.map(function(o){
+      return'<div class="rec-item"><div class="rec-stock"><span class="rec-name">'+o.name+'</span><span class="rec-code">'+o.code+'</span></div><div class="rec-suggest">'+o.suggest+' | '+o.suggest+'</div><div class="stop-loss">止损: '+o.stop+'</div></div>';
+    }).join('')+'</div>';
+  }
+  renderTimeline('auction-timeline',d.timeline);
+}
+
+function renderIntraday(d){
+  document.getElementById('intraday-date').textContent=d.date+' 午盘总结';
+  if(d.indices.length){
+    document.getElementById('intraday-idx').innerHTML=d.indices.map(function(idx){
+      return'<div class="idx-card"><div class="idx-name">'+idx.name+'</div><div class="idx-val" style="color:var(--text)">'+idx.val+'</div><div class="idx-change '+changeClass(idx.dir)+'">'+changeTag(idx.dir)+' '+fmtChange(idx.val2,idx.dir)+'</div></div>';
+    }).join('');
+  }
+  if(d.mood){
+    document.getElementById('intraday-mood').innerHTML='<div class="mood-icon">'+moodEmoji(d.mood)+'</div><div><div class="mood-label">早盘情绪</div><div class="mood-value">'+d.mood+'</div></div>';
+  }
+  if(d.sectors.length){
+    document.getElementById('intraday-sectors').innerHTML=d.sectors.map(function(s,i){
+      var rank=i+1;
+      var cls='rank-n';
+      if(rank===1)cls='rank-1';
+      else if(rank===2)cls='rank-2';
+      else if(rank===3)cls='rank-3';
+      return'<tr><td><span class="rank-badge '+cls+'">'+rank+'</span></td><td><span class="sector-rect" style="background:'+sectorColor(i)+'"></span>'+s.name+'</td><td class="'+changeClass(s.dir)+'">'+changeTag(s.dir)+' '+fmtChange(s.val,s.dir)+'</td><td style="color:var(--text2)">'+s.logic+'</td></tr>';
+    }).join('');
+  }
+  if(d.top5.length){
+    document.getElementById('intraday-top5').innerHTML=d.top5.map(function(s){
+      return'<div class="rec-item"><div class="rec-stock"><span class="rec-name">'+s.emoji+' '+s.name+'</span><span class="rec-code">'+s.code+'</span></div><div class="rec-sector"><span class="sector-tag">'+s.sector+'</span></div><div class="rec-change txt-up">🔥 '+fmtChange(s.val,s.dir)+'</div></div>';
+    }).join('');
+  }
+  if(d.bot5.length){
+    document.getElementById('intraday-bot5').innerHTML=d.bot5.map(function(s){
+      return'<div class="rec-item"><div class="rec-stock"><span class="rec-name">'+s.emoji+' '+s.name+'</span><span class="rec-code">'+s.code+'</span></div><div class="rec-sector"><span class="sector-tag">'+s.sector+'</span></div><div class="rec-change txt-down">❄️ '+fmtChange(s.val,s.dir)+'</div></div>';
+    }).join('');
+  }
+  if(d.opsText){
+    document.getElementById('intraday-ops').innerHTML='<div style="font-size:0.82rem;color:var(--text2);line-height:1.8">'+d.opsText.replace(/\n/g,'<br>')+'</div>';
+  }
+  renderTimeline('intraday-timeline',d.timeline);
+}
+
+function renderClose(d){
+  document.getElementById('close-date').textContent=d.date+' 尾盘分析';
+  if(d.indices.length){
+    document.getElementById('close-idx').innerHTML=d.indices.map(function(idx){
+      return'<div class="idx-card"><div class="idx-name">'+idx.name+'</div><div class="idx-val" style="color:var(--text)">'+idx.val+'</div><div class="idx-change '+changeClass(idx.dir)+'">'+changeTag(idx.dir)+' '+fmtChange(idx.val2,idx.dir)+'</div></div>';
+    }).join('');
+  }
+  if(d.analysis.feature||d.analysis.judge){
+    document.getElementById('close-analysis').innerHTML='<div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:0.5rem"><div style="background:var(--card2);padding:0.6rem 1rem;border-radius:8px;font-size:0.82rem"><span style="color:var(--text3)">尾盘特征: </span><span>'+d.analysis.feature+'</span></div><div style="background:var(--card2);padding:0.6rem 1rem;border-radius:8px;font-size:0.82rem"><span style="color:var(--text3)">分析判断: </span><span>'+d.analysis.judge+'</span></div></div>';
+  }
+  if(d.sectors.length){
+    document.getElementById('close-sectors').innerHTML=d.sectors.map(function(s,i){
+      var rank=i+1;
+      var cls='rank-n';
+      if(rank===1)cls='rank-1';
+      else if(rank===2)cls='rank-2';
+      else if(rank===3)cls='rank-3';
+      return'<tr><td><span class="rank-badge '+cls+'">'+rank+'</span></td><td><span class="sector-rect" style="background:'+sectorColor(i)+'"></span>'+s.name+'</td><td class="'+changeClass(s.dir)+'">'+changeTag(s.dir)+' '+fmtChange(s.val,s.dir)+'</td><td style="color:var(--text2)">'+s.eval_+'</td></tr>';
+    }).join('');
+  }
+  if(d.strong.length){
+    document.getElementById('close-strong').innerHTML=d.strong.map(function(s){
+      return'<div class="rec-item"><div class="rec-stock"><span class="rec-name">'+s.emoji+' '+s.name+'</span><span class="rec-code">'+s.code+'</span></div><div style="display:flex;gap:0.4rem;flex-wrap:wrap"><span class="sector-tag">'+s.sector+'</span><span style="font-size:0.68rem;color:var(--orange)">强弱: '+s.rel+'</span></div><div class="rec-change txt-up">🔥 '+fmtChange(s.val,s.dir)+'</div><div class="stop-loss">止损: '+s.stop+'</div></div>';
+    }).join('');
+  }
+  if(d.weak.length){
+    document.getElementById('close-weak').innerHTML=d.weak.map(function(s){
+      return'<div class="rec-item"><div class="rec-stock"><span class="rec-name">'+s.emoji+' '+s.name+'</span><span class="rec-code">'+s.code+'</span></div><div style="display:flex;gap:0.4rem;flex-wrap:wrap"><span class="sector-tag">'+s.sector+'</span><span style="font-size:0.68rem;color:var(--red)">强弱: '+s.rel+'</span></div><div class="rec-change txt-down">❄️ '+fmtChange(s.val,s.dir)+'</div><div class="stop-loss">止损: '+s.stop+'</div></div>';
+    }).join('');
+  }
+  var opsHtml='';
+  if(d.ops.signal)opsHtml+='<div style="font-size:0.82rem;color:var(--yellow);margin-bottom:0.5rem">⚠️ '+d.ops.signal+'</div>';
+  if(d.ops.recap)opsHtml+='<div style="font-size:0.82rem;color:var(--text2);line-height:1.8">'+d.ops.recap.replace(/\n/g,'<br>')+'</div>';
+  if(opsHtml)document.getElementById('close-ops').innerHTML=opsHtml;
+  renderTimeline('close-timeline',d.timeline);
+}
+
+function renderTimeline(id,items){
+  var el=document.getElementById(id);
+  if(!el||!items||!items.length)return;
+  el.innerHTML=items.map(function(item){
+    var dotCls=item.done?'done':item.active?'active':'pending';
+    var labelCls=item.done?'done':item.active?'active':'pending';
+    return'<div class="tl-item"><div class="tl-time">'+item.time+'</div><div class="tl-dot '+dotCls+'"></div><div class="tl-line"></div><div class="tl-label '+labelCls+'">'+item.label+'</div></div>';
+  }).join('');
+}
 </script>
 </body>
 </html>
