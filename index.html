@@ -307,9 +307,15 @@ var dbg=document.getElementById('dbg')||{textContent:''};
 
 function parseChangeStr(str){
   if(!str)return{raw:str||'',dir:'flat',val:0};
-  var m=str&&str.match(/([🟢🔴⚪])\s*([+-]?[\d.]+)%/);
-  if(!m){var m2=str&&str.match(/([+-]?[\d.]+)%/);if(m2)return{raw:str,dir:parseFloat(m2[1])>=0?'up':'down',val:Math.abs(parseFloat(m2[1]))};return{raw:str||'',dir:'flat',val:0};}
-  return{raw:str,dir:m[1]==='🔴'?'up':m[1]==='🟢'?'down':'flat',val:parseFloat(m[2])};
+  var m2=str&&str.match(/([+-]?[\d.]+)%/);
+  if(!m2)return{raw:str||'',dir:'flat',val:0};
+  var val=parseFloat(m2[1]);
+  // Emoji sign: 🔴 red/stop=up, 🟢 green/go=down, ⚪ neutral=flat
+  var dir='flat';
+  if(str.match(/🔴/))dir='up';
+  else if(str.match(/🟢/))dir='down';
+  else dir=val>0?'up':val<0?'down':'flat';
+  return{raw:str,dir:dir,val:Math.abs(val)};
 }
 
 function changeClass(dir){
@@ -428,8 +434,8 @@ function parsePremarket(md,date){
   var lines=md.split('\n');
   var inIdxSection=false;
   lines.forEach(function(line){
-    if(line.match(/大盘概览/)||line.match(/上证指数|深证成指|创业板|科创50/))inIdxSection=true;
-    else if(inIdxSection&&line.match(/^\|/)){
+    // Table rows take priority when already in section
+    if(inIdxSection&&line.match(/^\|/)){
       var cells=line.split('|').map(function(c){return c.trim();}).filter(function(c){return c;});
       // cells: [name, price+emoji, change+pct] or [name, price, emoji, change+pct]
       if(cells.length>=3){
@@ -443,6 +449,7 @@ function parsePremarket(md,date){
         d.indices.push({name:name,val:priceCell,dir:ch.dir,val2:ch.val});
       }
     }
+    else if(line.match(/大盘概览/))inIdxSection=true;
     else if(inIdxSection&&!line.match(/^\|/)&&line.trim()&&!line.match(/^[-*_]{3,}\s*$/))inIdxSection=false;
   });
 
