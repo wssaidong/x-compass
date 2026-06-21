@@ -15,6 +15,11 @@ export async function fetchText(url) {
 
 // 涨跌幅解析。A 股惯例：🔴=涨(up) 🟢=跌(down) ⚪=平(flat)；无 emoji 时按数值正负判定
 export function parseChange(str) {
+  return parseChangeStr(str);
+}
+
+// 兼容旧实现的别名（旧 index.html 用 parseChangeStr）
+export function parseChangeStr(str) {
   if (str == null) return { raw: '', dir: 'flat', val: 0 };
   const s = String(str);
   const m = s.match(/([+-]?[\d.]+)\s*%/);
