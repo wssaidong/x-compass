@@ -52,12 +52,14 @@ export function parseSelection(md, date = '') {
     if (zone === 'hotspot' && g(0) !== '排名' && cells.length >= 4) {
       hotspots.push({ rank: g(0), sector: stripEmojis(g(1)), logic: g(2), sustainability: g(3) });
     } else if (zone === 'selection' && sub === 'top10' && g(0) !== '排名') {
+      const ch = parseChange(g(4));
       topPicks.push({ rank: g(0), name: stripEmojis(g(1)), code: g(2), price: stripPrice(g(3)),
-        change: parseChange(g(4)), tech: stripMd(g(5)), score: stripMd(g(6)),
+        changePct: ch.val, dir: ch.dir, tech: stripMd(g(5)), score: stripMd(g(6)),
         signal: g(7), risk: g(8), trend: g(9) });
     } else if (zone === 'selection' && (sub === 'strong' || sub === 'active' || sub === 'potential') && g(0) !== '股票') {
+      const ch = parseChange(g(3));
       const row = { name: stripEmojis(g(0)), code: g(1), price: stripPrice(g(2)),
-        change: parseChange(g(3)), tech: stripMd(g(4)), score: stripMd(g(5)),
+        changePct: ch.val, dir: ch.dir, tech: stripMd(g(4)), score: stripMd(g(5)),
         rating: g(6), reason: g(7), trend: g(8) };
       if (sub === 'strong') strong.push(row);
       else if (sub === 'active') active.push(row);
