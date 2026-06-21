@@ -44,6 +44,11 @@ export function stripEmojis(s) {
     .trim();
 }
 
+// 去掉 markdown 强调标记 ** ` _ （用于 "**78**" → "78"）
+export function stripMd(s) {
+  return String(s ?? '').replace(/\*\*/g, '').replace(/`/g, '').replace(/(^|\s)_(?=\S)/g, '$1').trim();
+}
+
 // 方向 → CSS class（红涨绿跌）
 export function dirClass(dir) {
   return dir === 'up' ? 'up' : dir === 'down' ? 'down' : 'flat';
