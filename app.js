@@ -306,6 +306,142 @@ function renderReview(d) {
 }
 
 // ========== 渲染：深度（Markdown 渲染） ==========
+// ========== 轻量 Markdown 渲染器 ==========
+// 覆盖 # h1-6 / 表格 / 列表 / **bold** / `code` / ```代码块``` / > quote / --- hr
+// 设计：先 esc() 防 XSS，再按行扫描 + 块级匹配，最后做 inline 替换
+// 边界：AAna 报告里的"标准 markdown + emoji + ⚠️ 引用块"
+function renderInline(s) {
+  // 行内元素：先 code（防 **/` 互相破坏），再 bold，最后 emoji 防误伤
+  // 1) inline code: `text`
+  s = s.replace(/`([^`\n]+)`/g, (_, c) => `<code>${c}</code>`);
+  // 2) bold: **text** (中文报告里经常混用 *text* — 一并支持)
+  s = s.replace(/\*\*([^*\n]+)\*\*/g, '<strong>$1</strong>');
+  s = s.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<strong>$2</strong>');
+  return s;
+}
+
+function renderMarkdown(md) {
+  if (!md) return '';
+  const lines = md.split('\n');
+  const out = [];
+  let i = 0;
+
+  // 块级扫描：每次 while 循环吃一段
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // 1) 代码块 ```...```
+    if (/^```/.test(line)) {
+      const buf = [];
+      i++;
+      while (i < lines.length && !/^```/.test(lines[i])) {
+        buf.push(lines[i]);
+        i++;
+      }
+      i++; // skip closing ```
+      out.push(`<pre><code>${esc(buf.join('\n'))}</code></pre>`);
+      continue;
+    }
+
+    // 2) 表格：连续 | 开头 + | --- | 分隔 + | 结尾
+    if (/^\s*\|/.test(line) && i + 1 < lines.length && /^\s*\|[\s:|-]+\|/.test(lines[i + 1])) {
+      const headerCells = line.split('|').slice(1, -1).map(c => c.trim());
+      i += 2; // skip header + 分隔行
+      const rows = [];
+      while (i < lines.length && /^\s*\|/.test(lines[i])) {
+        rows.push(lines[i].split('|').slice(1, -1).map(c => c.trim()));
+        i++;
+      }
+      let tbl = '<div class="tbl-wrap"><table class="tbl"><thead><tr>';
+      for (const h of headerCells) tbl += `<th>${renderInline(esc(h))}</th>`;
+      tbl += '</tr></thead><tbody>';
+      for (const row of rows) {
+        tbl += '<tr>';
+        for (const cell of row) tbl += `<td>${renderInline(esc(cell || '—'))}</td>`;
+        tbl += '</tr>';
+      }
+      tbl += '</tbody></table></div>';
+      out.push(tbl);
+      continue;
+    }
+
+    // 3) 标题 # ~ ######
+    const hm = line.match(/^(#{1,6})\s+(.*)$/);
+    if (hm) {
+      const lvl = Math.min(hm[1].length, 6);
+      out.push(`<h${lvl}>${renderInline(esc(hm[2]))}</h${lvl}>`);
+      i++;
+      continue;
+    }
+
+    // 4) 分隔线 ---
+    if (/^---+$/.test(line.trim())) {
+      out.push('<hr/>');
+      i++;
+      continue;
+    }
+
+    // 5) 引用块 > (支持连续行合并)
+    if (/^\s*>/.test(line)) {
+      const buf = [];
+      while (i < lines.length && /^\s*>/.test(lines[i])) {
+        buf.push(lines[i].replace(/^\s*>\s?/, ''));
+        i++;
+      }
+      out.push(`<blockquote>${renderInline(esc(buf.join('\n'))).replace(/\n/g, '<br>')}</blockquote>`);
+      continue;
+    }
+
+    // 6) 无序列表 - / * (支持嵌套缩进)
+    if (/^\s*[-*]\s+/.test(line)) {
+      const buf = [];
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+        buf.push(lines[i].replace(/^\s*[-*]\s+/, ''));
+        i++;
+      }
+      out.push('<ul>' + buf.map(b => `<li>${renderInline(esc(b))}</li>`).join('') + '</ul>');
+      continue;
+    }
+
+    // 7) 有序列表 1. 2.
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const buf = [];
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+        buf.push(lines[i].replace(/^\s*\d+\.\s+/, ''));
+        i++;
+      }
+      out.push('<ol>' + buf.map(b => `<li>${renderInline(esc(b))}</li>`).join('') + '</ol>');
+      continue;
+    }
+
+    // 8) 空行：段落分隔
+    if (line.trim() === '') {
+      i++;
+      continue;
+    }
+
+    // 9) 默认：合并连续非空行为一个段落
+    const para = [];
+    while (i < lines.length && lines[i].trim() !== ''
+           && !/^#{1,6}\s/.test(lines[i])
+           && !/^```/.test(lines[i])
+           && !/^\s*\|/.test(lines[i])
+           && !/^\s*>/.test(lines[i])
+           && !/^\s*[-*]\s+/.test(lines[i])
+           && !/^\s*\d+\.\s+/.test(lines[i])
+           && !/^---+$/.test(lines[i].trim())) {
+      para.push(lines[i]);
+      i++;
+    }
+    if (para.length) {
+      // 单行段落不要包 <p>（让 emoji + 短句不显得突兀）
+      const text = para.join(' ');
+      out.push(`<p>${renderInline(esc(text))}</p>`);
+    }
+  }
+  return out.join('\n');
+}
+
 function renderDeepDive(d) {
   if (!d) return showEmpty('deepdive');
   const sections = d.rawSections || [];
@@ -317,14 +453,13 @@ function renderDeepDive(d) {
   </div><div class="md-body">`;
 
   for (const sec of sections) {
+    // 跳过 H1 标题（已被 bento-group 头部展示）
     if (sec.level === 1 && sec.heading === d.title) continue;
-    if (sec.level === 1) html += `<h1>${esc(sec.heading)}</h1>`;
-    else if (sec.level === 2) html += `<h2>${esc(sec.heading)}</h2>`;
-    else if (sec.level === 3) html += `<h3>${esc(sec.heading)}</h3>`;
-    const content = esc(sec.content)
-      .replace(/\n\n/g, '</p><p>')
-      .replace(/\n/g, '<br>');
-    html += `<p>${content}</p>`;
+    if (sec.level === 1) html += `<h1>${renderInline(esc(sec.heading))}</h1>`;
+    else if (sec.level === 2) html += `<h2>${renderInline(esc(sec.heading))}</h2>`;
+    else if (sec.level === 3) html += `<h3>${renderInline(esc(sec.heading))}</h3>`;
+    // 用完整 markdown 渲染器替换原来的"双换行→p"简陋逻辑
+    html += renderMarkdown(sec.content);
   }
   html += `</div>`;
   return html;
