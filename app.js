@@ -1,5 +1,6 @@
-// app.js — x-compass v3.0 (Tokyo Night Trading Terminal)
-// 6 个 Tab 切换 / 日期选择 / 加载协调 / Bento Grid 渲染 / 错误降级
+// app.js — x-compass v3.1 (Tokyo Night Trading Terminal)
+// 7 个 Tab 切换 / 日期选择 / 加载协调 / Bento Grid 渲染 / 错误降级
+// v3.1: +📅 周报 tab (AAna weekly_review 三维度胜率, CSS 条形图可视化)
 
 import { parseSelectionReport } from './parsers/selection.js';
 import { parseReviewReport } from './parsers/review.js';
@@ -7,6 +8,7 @@ import { parseDeepDiveReport } from './parsers/deepdive.js';
 import { loadPremarketReport } from './parsers/premarket.js';
 import { loadAuctionReport } from './parsers/auction.js';
 import { loadIntradayReport, loadCloseReport } from './parsers/intraday.js';
+import { parseWeeklyReport } from './parsers/weekly.js';
 import { esc } from './parsers/common.js';
 
 const TABS = [
@@ -16,6 +18,7 @@ const TABS = [
   { id: 'premarket', label: '🌅 盘前', loader: loadPremarketReport },
   { id: 'auction', label: '⚡ 竞价', loader: loadAuctionReport },
   { id: 'intraday', label: '📈 盘中', loader: loadIntradayReport },
+  { id: 'weekly', label: '📅 周报', loader: () => parseWeeklyReport() },  // 不随日期变,拉 latest
 ];
 
 const STATE = {
@@ -546,6 +549,91 @@ function renderIntradayLike(d, tabId) {
 }
 
 // ========== 加载 + 渲染调度 ==========
+// ---- 周报渲染 (v3.1 · 三维度胜率条形图) ----
+
+// 单条条形图行: [label | ▓▓▓▓░░░░ | 41.4% · n=29 · -0.24%]
+function renderBarRow(item, maxRate) {
+  const rate = item.winRate ?? 0;
+  const width = maxRate > 0 ? Math.max(rate / maxRate * 100, 1.5) : 1.5;  // 最小可见宽度
+  const ret = item.avgRet;
+  const retDir = ret > 0 ? 'up' : ret < 0 ? 'down' : 'flat';
+  const retStr = ret == null ? '—' : `${ret > 0 ? '+' : ''}${ret.toFixed(2)}%`;
+  return `
+    <div class="wr-row">
+      <div class="wr-label">${esc(item.label)}<span class="wr-n">n=${esc(String(item.n ?? '?'))}</span></div>
+      <div class="wr-bar-track">
+        <div class="wr-bar ${item.level || ''}" style="width:${width.toFixed(1)}%"></div>
+      </div>
+      <div class="wr-rate">${rate.toFixed(1)}%</div>
+      <div class="wr-ret ${retDir}">${retStr}</div>
+    </div>`;
+}
+
+function renderBarGroup(title, desc, items) {
+  if (!items?.length) return '';
+  const maxRate = Math.max(...items.map(i => i.winRate ?? 0), 50);
+  // 按胜率降序 (趋势组除外, 由调用方排好)
+  const sorted = [...items].sort((a, b) => (b.winRate ?? 0) - (a.winRate ?? 0));
+  return `
+    <div class="bento-group">
+      <div class="group-head">
+        <div class="group-title">${esc(title)}</div>
+        <div class="group-desc">${esc(desc)}</div>
+      </div>
+      <div class="wr-bars">
+        ${sorted.map(i => renderBarRow(i, maxRate)).join('')}
+      </div>
+    </div>`;
+}
+
+function renderWeekly(d) {
+  if (!d) return showEmpty('weekly');
+  const genAt = (d.generatedAt || '').replace('T', ' ').slice(0, 16);
+
+  // 顶部: 标题 + 窗口 + 关键发现
+  let html = `
+    <div class="metric-hero">
+      <div class="metric-card primary">
+        <div class="metric-label">周报窗口</div>
+        <div class="metric-value" style="font-size:1.4rem">${esc(d.window || '—')}</div>
+        <div class="metric-sub">生成于 ${esc(genAt)}</div>
+      </div>
+      ${d.notes?.length ? `
+      <div class="metric-card" style="grid-column:span 2">
+        <div class="metric-label">📌 关键发现</div>
+        <div class="metric-sub" style="text-align:left;line-height:1.7">
+          ${d.notes.map(n => `<div>· ${esc(n)}</div>`).join('')}
+        </div>
+      </div>` : ''}
+    </div>`;
+
+  // 1️⃣ 板块维度 (用户核心诉求)
+  html += renderBarGroup('🏭 板块胜率', '推荐股所属板块 · 胜率 / 样本数 / 平均收益', d.sector);
+
+  // 2️⃣ 持有期维度 (用户核心诉求)
+  html += renderBarGroup('⏱️ 持有期胜率', 'T+1/3/5/15 拿几天最划算 · 胜率 / 样本数 / 平均收益', d.hold);
+
+  // 3️⃣ 星期维度 (用户核心诉求)
+  html += renderBarGroup('📆 星期胜率', '周一~周五哪天推荐的票质量好', d.dow);
+
+  // 4️⃣ 周趋势 (保持时间序,不排序)
+  if (d.trend?.length) {
+    const maxRate = Math.max(...d.trend.map(i => i.winRate ?? 0), 50);
+    html += `
+    <div class="bento-group">
+      <div class="group-head">
+        <div class="group-title">📈 周胜率趋势</div>
+        <div class="group-desc">策略在退化还是改善 · ISO 周时间序</div>
+      </div>
+      <div class="wr-bars">
+        ${d.trend.map(i => renderBarRow({ ...i, label: i.week }, maxRate)).join('')}
+      </div>
+    </div>`;
+  }
+
+  return html;
+}
+
 async function loadTab(tabId) {
   const tab = TABS.find(t => t.id === tabId);
   if (!tab) return;
@@ -574,6 +662,7 @@ function renderTab(tabId, data) {
   if (tabId === 'selection') html = renderSelection(data);
   else if (tabId === 'review') html = renderReview(data);
   else if (tabId === 'deepdive') html = renderDeepDive(data);
+  else if (tabId === 'weekly') html = renderWeekly(data);
   else html = renderIntradayLike(data, tabId);
 
   c.innerHTML = html || showEmpty(tabId);

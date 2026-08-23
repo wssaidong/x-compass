@@ -750,3 +750,70 @@ body {
   .md-body { padding: 1rem 1.1rem; }
   .bento { gap: 0.65rem; }
 }
+/* ========== v3.1 周报 tab · 三维度胜率条形图 ========== */
+.wr-bars { display: flex; flex-direction: column; gap: 0.55rem; padding: 0.25rem 0; }
+.wr-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 150px) 1fr 64px 76px;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0.5rem;
+  border-radius: 8px;
+  transition: background 0.15s;
+}
+.wr-row:hover { background: rgba(122, 162, 247, 0.06); }
+.wr-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary, #c0caf5);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.wr-label .wr-n {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--text-muted, #565f89);
+}
+.wr-bar-track {
+  height: 18px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+.wr-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent-blue), var(--accent-purple));
+  transition: width 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  min-width: 3px;
+}
+/* 等级配色 (对应周报 emoji) */
+.wr-bar.good { background: linear-gradient(90deg, #9ece6a, #73daca); }
+.wr-bar.ok   { background: linear-gradient(90deg, #e0af68, #ff9e64); }
+.wr-bar.weak { background: linear-gradient(90deg, #ff9e64, #f7768e); }
+.wr-bar.bad  { background: linear-gradient(90deg, #f7768e, #db4b6b); }
+.wr-rate {
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary, #c0caf5);
+}
+.wr-ret {
+  font-size: 0.8rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-muted, #565f89);
+}
+.wr-ret.up { color: var(--accent-red, #f7768e); }    /* A股红涨 */
+.wr-ret.down { color: var(--accent-green, #9ece6a); } /* A股绿跌 */
+
+@media (max-width: 640px) {
+  .wr-row { grid-template-columns: minmax(72px, 110px) 1fr 52px 64px; gap: 0.5rem; }
+  .wr-label { font-size: 0.78rem; }
+  .wr-rate { font-size: 0.85rem; }
+  .wr-ret { font-size: 0.72rem; }
+}
